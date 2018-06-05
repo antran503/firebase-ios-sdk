@@ -34,15 +34,19 @@
 @end
 
 @interface FIRNetworkTest : FIRTestCase <FIRNetworkReachabilityDelegate>
+
+@property(nonatomic, strong) FIRNetwork *network;
+
+/// Fake Server.
+@property(nonatomic, strong) GTMHTTPRequestMessage *request;
+
 @end
 
 @implementation FIRNetworkTest {
   dispatch_queue_t _backgroundQueue;
-  FIRNetwork *_network;
 
   /// Fake Server.
   GTMHTTPServer *_httpServer;
-  GTMHTTPRequestMessage *_request;
   int _statusCode;
 
   // For network reachability test.
@@ -86,9 +90,9 @@
 #pragma mark - Test reachability
 
 - (void)testReachability {
-  _network.reachabilityDelegate = self;
+  self.network.reachabilityDelegate = self;
 
-  id reachability = [_network valueForKey:@"_reachability"];
+  id reachability = [self.network valueForKey:@"_reachability"];
   XCTAssertNotNil(reachability);
 
   id reachabilityMock = OCMPartialMock(reachability);
@@ -98,15 +102,15 @@
   // Fake scenario with connectivity.
   _fakeNetworkIsReachable = YES;
   _fakeReachabilityStatus = kFIRReachabilityViaWifi;
-  [_network reachability:reachabilityMock statusChanged:[reachabilityMock reachabilityStatus]];
-  XCTAssertTrue([_network isNetworkConnected]);
+  [self.network reachability:reachabilityMock statusChanged:[reachabilityMock reachabilityStatus]];
+  XCTAssertTrue([self.network isNetworkConnected]);
   XCTAssertEqual(_currentNetworkStatus, _fakeNetworkIsReachable);
 
   // Fake scenario without connectivity.
   _fakeNetworkIsReachable = NO;
   _fakeReachabilityStatus = kFIRReachabilityNotReachable;
-  [_network reachability:reachabilityMock statusChanged:[reachabilityMock reachabilityStatus]];
-  XCTAssertFalse([_network isNetworkConnected]);
+  [self.network reachability:reachabilityMock statusChanged:[reachabilityMock reachabilityStatus]];
+  XCTAssertFalse([self.network isNetworkConnected]);
   XCTAssertEqual(_currentNetworkStatus, _fakeNetworkIsReachable);
 
   [reachabilityMock stopMocking];
@@ -123,17 +127,17 @@
       [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%d/2", _httpServer.port]];
   _statusCode = 200;
 
-  [_network postURL:url
+  [self.network postURL:url
                      payload:uncompressedData
                        queue:_backgroundQueue
       usingBackgroundSession:NO
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              [self verifyResponse:response error:error];
              [self verifyRequest];
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
-  XCTAssertTrue(_network.hasUploadInProgress, "There must be a pending request");
+  XCTAssertTrue(self.network.hasUploadInProgress, "There must be a pending request");
   // Wait a little bit so the server has enough time to respond.
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
@@ -151,16 +155,16 @@
       [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%d/3", _httpServer.port]];
   _statusCode = 500;
 
-  [_network postURL:url
+  [self.network postURL:url
                      payload:uncompressedData
                        queue:_backgroundQueue
       usingBackgroundSession:NO
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              XCTAssertEqual(((NSHTTPURLResponse *)response).statusCode, 500);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
-  XCTAssertTrue(_network.hasUploadInProgress, "There must be a pending request");
+  XCTAssertTrue(self.network.hasUploadInProgress, "There must be a pending request");
   // Wait a little bit so the server has enough time to respond.
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
@@ -176,13 +180,13 @@
   NSData *uncompressedData = [@"Google" dataUsingEncoding:NSUTF8StringEncoding];
   _statusCode = 200;
 
-  [_network postURL:nil
+  [self.network postURL:nil
                      payload:uncompressedData
                        queue:_backgroundQueue
       usingBackgroundSession:NO
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              XCTAssertEqual(error.code, FIRErrorCodeNetworkInvalidURL);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
   [self waitForExpectationsWithTimeout:10
@@ -198,13 +202,13 @@
   NSData *uncompressedData = [@"Google" dataUsingEncoding:NSUTF8StringEncoding];
   _statusCode = 200;
 
-  [_network postURL:[NSURL URLWithString:@""]
+  [self.network postURL:[NSURL URLWithString:@""]
                      payload:uncompressedData
                        queue:_backgroundQueue
       usingBackgroundSession:NO
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              XCTAssertEqual(error.code, FIRErrorCodeNetworkInvalidURL);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
   [self waitForExpectationsWithTimeout:10
@@ -222,18 +226,18 @@
       [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%d/2", _httpServer.port]];
   _statusCode = 200;
 
-  [_network postURL:url
+  [self.network postURL:url
                      payload:uncompressedData
                        queue:_backgroundQueue
       usingBackgroundSession:NO
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              XCTAssertNil(error);
-             XCTAssertNotNil(_request);
-             XCTAssertEqualObjects([_request.URL absoluteString], [url absoluteString]);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertNotNil(self.request);
+             XCTAssertEqualObjects([self.request.URL absoluteString], [url absoluteString]);
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
-  XCTAssertTrue(_network.hasUploadInProgress, "There must be a pending request");
+  XCTAssertTrue(self.network.hasUploadInProgress, "There must be a pending request");
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
                                  if (error) {
@@ -250,7 +254,7 @@
       [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%d/1", _httpServer.port]];
   _statusCode = 200;
 
-  [_network postURL:url
+  [self.network postURL:url
                      payload:uncompressedData
                        queue:nil
       usingBackgroundSession:NO
@@ -277,7 +281,7 @@
                                                       _httpServer.port]];
   _statusCode = 200;
 
-  [_network postURL:url
+  [self.network postURL:url
                      payload:uncompressedData
                        queue:_backgroundQueue
       usingBackgroundSession:NO
@@ -285,11 +289,11 @@
              [self verifyResponse:response error:error];
              [self verifyRequest];
 
-             XCTAssertFalse(_network.hasUploadInProgress, @"hasUploadInProgress must be false");
+             XCTAssertFalse(self.network.hasUploadInProgress, @"hasUploadInProgress must be false");
              [expectation fulfill];
            }];
 
-  XCTAssertTrue(_network.hasUploadInProgress, @"hasUploadInProgress must be true");
+  XCTAssertTrue(self.network.hasUploadInProgress, @"hasUploadInProgress must be true");
   // Wait a little bit so the server has enough time to respond.
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
@@ -309,17 +313,17 @@
       [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%d/2", _httpServer.port]];
   _statusCode = 200;
 
-  [_network postURL:url
+  [self.network postURL:url
                      payload:uncompressedData
                        queue:_backgroundQueue
       usingBackgroundSession:YES
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              [self verifyResponse:response error:error];
              [self verifyRequest];
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
-  XCTAssertTrue(_network.hasUploadInProgress, "There must be a pending request");
+  XCTAssertTrue(self.network.hasUploadInProgress, "There must be a pending request");
   // Wait a little bit so the server has enough time to respond.
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
@@ -337,16 +341,16 @@
       [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%d/3", _httpServer.port]];
   _statusCode = 500;
 
-  [_network postURL:url
+  [self.network postURL:url
                      payload:uncompressedData
                        queue:_backgroundQueue
       usingBackgroundSession:YES
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              XCTAssertEqual(((NSHTTPURLResponse *)response).statusCode, 500);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
-  XCTAssertTrue(_network.hasUploadInProgress, "There must be a pending request");
+  XCTAssertTrue(self.network.hasUploadInProgress, "There must be a pending request");
   // Wait a little bit so the server has enough time to respond.
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
@@ -362,13 +366,13 @@
   NSData *uncompressedData = [@"Google" dataUsingEncoding:NSUTF8StringEncoding];
   _statusCode = 200;
 
-  [_network postURL:nil
+  [self.network postURL:nil
                      payload:uncompressedData
                        queue:_backgroundQueue
       usingBackgroundSession:YES
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              XCTAssertEqual(error.code, FIRErrorCodeNetworkInvalidURL);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
   [self waitForExpectationsWithTimeout:10
@@ -384,13 +388,13 @@
   NSData *uncompressedData = [@"Google" dataUsingEncoding:NSUTF8StringEncoding];
   _statusCode = 200;
 
-  [_network postURL:[NSURL URLWithString:@""]
+  [self.network postURL:[NSURL URLWithString:@""]
                      payload:uncompressedData
                        queue:_backgroundQueue
       usingBackgroundSession:YES
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              XCTAssertEqual(error.code, FIRErrorCodeNetworkInvalidURL);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
   [self waitForExpectationsWithTimeout:10
@@ -408,18 +412,18 @@
       [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%d/2", _httpServer.port]];
   _statusCode = 200;
 
-  [_network postURL:url
+  [self.network postURL:url
                      payload:uncompressedData
                        queue:_backgroundQueue
       usingBackgroundSession:YES
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              XCTAssertNil(error);
-             XCTAssertNotNil(_request);
-             XCTAssertEqualObjects([_request.URL absoluteString], [url absoluteString]);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertNotNil(self.request);
+             XCTAssertEqualObjects([self.request.URL absoluteString], [url absoluteString]);
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
-  XCTAssertTrue(_network.hasUploadInProgress, "There must be a pending request");
+  XCTAssertTrue(self.network.hasUploadInProgress, "There must be a pending request");
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
                                  if (error) {
@@ -436,7 +440,7 @@
       [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%d/1", _httpServer.port]];
   _statusCode = 200;
 
-  [_network postURL:url
+  [self.network postURL:url
                      payload:uncompressedData
                        queue:nil
       usingBackgroundSession:YES
@@ -463,7 +467,7 @@
                                                       _httpServer.port]];
   _statusCode = 200;
 
-  [_network postURL:url
+  [self.network postURL:url
                      payload:uncompressedData
                        queue:_backgroundQueue
       usingBackgroundSession:YES
@@ -471,11 +475,11 @@
              [self verifyResponse:response error:error];
              [self verifyRequest];
 
-             XCTAssertFalse(_network.hasUploadInProgress, @"hasUploadInProgress must be false");
+             XCTAssertFalse(self.network.hasUploadInProgress, @"hasUploadInProgress must be false");
              [expectation fulfill];
            }];
 
-  XCTAssertTrue(_network.hasUploadInProgress, @"hasUploadInProgress must be true");
+  XCTAssertTrue(self.network.hasUploadInProgress, @"hasUploadInProgress must be true");
   // Wait a little bit so the server has enough time to respond.
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
@@ -494,7 +498,7 @@
       [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%d/2", _httpServer.port]];
   _statusCode = 200;
 
-  [_network getURL:url
+  [self.network getURL:url
                      headers:nil
                        queue:_backgroundQueue
       usingBackgroundSession:NO
@@ -504,10 +508,10 @@
                  [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
              XCTAssertEqualObjects(responseBody, @"<html><body>Hello, World!</body></html>");
              XCTAssertNil(error);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
-  XCTAssertTrue(_network.hasUploadInProgress, "There must be a pending request");
+  XCTAssertTrue(self.network.hasUploadInProgress, "There must be a pending request");
   // Wait a little bit so the server has enough time to respond.
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
@@ -523,16 +527,16 @@
       [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%d/3", _httpServer.port]];
   _statusCode = 500;
 
-  [_network getURL:url
+  [self.network getURL:url
                      headers:nil
                        queue:_backgroundQueue
       usingBackgroundSession:NO
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              XCTAssertEqual(((NSHTTPURLResponse *)response).statusCode, 500);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
-  XCTAssertTrue(_network.hasUploadInProgress, "There must be a pending request");
+  XCTAssertTrue(self.network.hasUploadInProgress, "There must be a pending request");
   // Wait a little bit so the server has enough time to respond.
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
@@ -546,13 +550,13 @@
   XCTestExpectation *expectation = [self expectationWithDescription:@"Expect block is called"];
   _statusCode = 200;
 
-  [_network getURL:nil
+  [self.network getURL:nil
                      headers:nil
                        queue:_backgroundQueue
       usingBackgroundSession:NO
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              XCTAssertEqual(error.code, FIRErrorCodeNetworkInvalidURL);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
   [self waitForExpectationsWithTimeout:10
@@ -567,13 +571,13 @@
   XCTestExpectation *expectation = [self expectationWithDescription:@"Expect block is called"];
   _statusCode = 200;
 
-  [_network getURL:[NSURL URLWithString:@""]
+  [self.network getURL:[NSURL URLWithString:@""]
                      headers:nil
                        queue:_backgroundQueue
       usingBackgroundSession:NO
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              XCTAssertEqual(error.code, FIRErrorCodeNetworkInvalidURL);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
   [self waitForExpectationsWithTimeout:10
@@ -591,7 +595,7 @@
       [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%d/1", _httpServer.port]];
   _statusCode = 200;
 
-  [_network getURL:url
+  [self.network getURL:url
                      headers:nil
                        queue:nil
       usingBackgroundSession:NO
@@ -601,10 +605,10 @@
                  [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
              XCTAssertEqualObjects(responseBody, @"<html><body>Hello, World!</body></html>");
              XCTAssertNil(error);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
-  XCTAssertTrue(_network.hasUploadInProgress, "There must be a pending request");
+  XCTAssertTrue(self.network.hasUploadInProgress, "There must be a pending request");
   // Wait a little bit so the server has enough time to respond.
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
@@ -621,7 +625,7 @@
                                                       _httpServer.port]];
   _statusCode = 200;
 
-  [_network getURL:url
+  [self.network getURL:url
                      headers:nil
                        queue:_backgroundQueue
       usingBackgroundSession:NO
@@ -631,11 +635,11 @@
                  [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
              XCTAssertEqualObjects(responseBody, @"<html><body>Hello, World!</body></html>");
              XCTAssertNil(error);
-             XCTAssertFalse(_network.hasUploadInProgress, @"hasUploadInProgress must be false");
+             XCTAssertFalse(self.network.hasUploadInProgress, @"hasUploadInProgress must be false");
              [expectation fulfill];
            }];
 
-  XCTAssertTrue(_network.hasUploadInProgress, @"hasUploadInProgress must be true");
+  XCTAssertTrue(self.network.hasUploadInProgress, @"hasUploadInProgress must be true");
   // Wait a little bit so the server has enough time to respond.
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
@@ -654,7 +658,7 @@
 
   NSDictionary *headers = @{@"Version" : @"123"};
 
-  [_network getURL:url
+  [self.network getURL:url
                      headers:headers
                        queue:_backgroundQueue
       usingBackgroundSession:NO
@@ -665,7 +669,7 @@
              XCTAssertEqualObjects(responseBody, @"<html><body>Hello, World!</body></html>");
              XCTAssertNil(error);
 
-             NSString *version = [_request.allHeaderFieldValues valueForKey:@"Version"];
+             NSString *version = [self.request.allHeaderFieldValues valueForKey:@"Version"];
              XCTAssertEqualObjects(version, @"123");
 
              [expectation fulfill];
@@ -689,7 +693,7 @@
       [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%d/2", _httpServer.port]];
   _statusCode = 200;
 
-  [_network getURL:url
+  [self.network getURL:url
                      headers:nil
                        queue:_backgroundQueue
       usingBackgroundSession:YES
@@ -699,10 +703,10 @@
                  [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
              XCTAssertEqualObjects(responseBody, @"<html><body>Hello, World!</body></html>");
              XCTAssertNil(error);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
-  XCTAssertTrue(_network.hasUploadInProgress, "There must be a pending request");
+  XCTAssertTrue(self.network.hasUploadInProgress, "There must be a pending request");
   // Wait a little bit so the server has enough time to respond.
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
@@ -718,16 +722,16 @@
       [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%d/3", _httpServer.port]];
   _statusCode = 500;
 
-  [_network getURL:url
+  [self.network getURL:url
                      headers:nil
                        queue:_backgroundQueue
       usingBackgroundSession:YES
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              XCTAssertEqual(((NSHTTPURLResponse *)response).statusCode, 500);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
-  XCTAssertTrue(_network.hasUploadInProgress, "There must be a pending request");
+  XCTAssertTrue(self.network.hasUploadInProgress, "There must be a pending request");
   // Wait a little bit so the server has enough time to respond.
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
@@ -741,13 +745,13 @@
   XCTestExpectation *expectation = [self expectationWithDescription:@"Expect block is called"];
   _statusCode = 200;
 
-  [_network getURL:nil
+  [self.network getURL:nil
                      headers:nil
                        queue:_backgroundQueue
       usingBackgroundSession:YES
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              XCTAssertEqual(error.code, FIRErrorCodeNetworkInvalidURL);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
   [self waitForExpectationsWithTimeout:10
@@ -762,13 +766,13 @@
   XCTestExpectation *expectation = [self expectationWithDescription:@"Expect block is called"];
   _statusCode = 200;
 
-  [_network getURL:[NSURL URLWithString:@""]
+  [self.network getURL:[NSURL URLWithString:@""]
                      headers:nil
                        queue:_backgroundQueue
       usingBackgroundSession:YES
            completionHandler:^(NSHTTPURLResponse *response, NSData *data, NSError *error) {
              XCTAssertEqual(error.code, FIRErrorCodeNetworkInvalidURL);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
   [self waitForExpectationsWithTimeout:10
@@ -786,7 +790,7 @@
       [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%d/1", _httpServer.port]];
   _statusCode = 200;
 
-  [_network getURL:url
+  [self.network getURL:url
                      headers:nil
                        queue:nil
       usingBackgroundSession:YES
@@ -796,10 +800,10 @@
                  [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
              XCTAssertEqualObjects(responseBody, @"<html><body>Hello, World!</body></html>");
              XCTAssertNil(error);
-             XCTAssertFalse(_network.hasUploadInProgress, "There must be no pending request");
+             XCTAssertFalse(self.network.hasUploadInProgress, "There must be no pending request");
              [expectation fulfill];
            }];
-  XCTAssertTrue(_network.hasUploadInProgress, "There must be a pending request");
+  XCTAssertTrue(self.network.hasUploadInProgress, "There must be a pending request");
   // Wait a little bit so the server has enough time to respond.
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
@@ -816,7 +820,7 @@
                                                       _httpServer.port]];
   _statusCode = 200;
 
-  [_network getURL:url
+  [self.network getURL:url
                      headers:nil
                        queue:_backgroundQueue
       usingBackgroundSession:YES
@@ -826,11 +830,11 @@
                  [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
              XCTAssertEqualObjects(responseBody, @"<html><body>Hello, World!</body></html>");
              XCTAssertNil(error);
-             XCTAssertFalse(_network.hasUploadInProgress, @"hasUploadInProgress must be false");
+             XCTAssertFalse(self.network.hasUploadInProgress, @"hasUploadInProgress must be false");
              [expectation fulfill];
            }];
 
-  XCTAssertTrue(_network.hasUploadInProgress, @"hasUploadInProgress must be true");
+  XCTAssertTrue(self.network.hasUploadInProgress, @"hasUploadInProgress must be true");
   // Wait a little bit so the server has enough time to respond.
   [self waitForExpectationsWithTimeout:10
                                handler:^(NSError *error) {
@@ -849,7 +853,7 @@
 
   NSDictionary *headers = @{@"Version" : @"123"};
 
-  [_network getURL:url
+  [self.network getURL:url
                      headers:headers
                        queue:_backgroundQueue
       usingBackgroundSession:YES
@@ -860,7 +864,7 @@
              XCTAssertEqualObjects(responseBody, @"<html><body>Hello, World!</body></html>");
              XCTAssertNil(error);
 
-             NSString *version = [_request.allHeaderFieldValues valueForKey:@"Version"];
+             NSString *version = [self.request.allHeaderFieldValues valueForKey:@"Version"];
              XCTAssertEqualObjects(version, @"123");
 
              [expectation fulfill];
@@ -882,7 +886,7 @@
   NSFileManager *fileManager = [NSFileManager defaultManager];
 
   FIRNetworkURLSession *session = [[FIRNetworkURLSession alloc]
-      initWithNetworkLoggerDelegate:(id<FIRNetworkLoggerDelegate>)_network];
+      initWithNetworkLoggerDelegate:(id<FIRNetworkLoggerDelegate>)self.network];
   NSArray *paths =
       NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
   NSString *applicationSupportDirectory = paths.firstObject;
@@ -907,7 +911,7 @@
   NSDate *now =
       [[NSDate date] dateByAddingTimeInterval:1];  // Start mocking the clock to avoid flakiness.
   id mockDate = OCMStrictClassMock([NSDate class]);
-  [[[mockDate stub] andReturn:now] date];
+  OCMStub([mockDate date]).andReturn(now);
 
   // The file should not be removed since it is not expired yet.
   [session maybeRemoveTempFilesAtURL:folderURL expiringTime:20];
@@ -919,7 +923,7 @@
 
   now = [[NSDate date] dateByAddingTimeInterval:100];  // Move forward in time 100s.
   mockDate = OCMStrictClassMock([NSDate class]);
-  [[[mockDate stub] andReturn:now] date];
+  OCMStub([mockDate date]).andReturn(now);
 
   [session maybeRemoveTempFilesAtURL:folderURL expiringTime:20];
   XCTAssertFalse([fileManager fileExistsAtPath:tempFile1.path]);
@@ -942,7 +946,7 @@
 }
 
 - (void)verifyRequest {
-  XCTAssertNotNil(_request, @"Request cannot be nil");
+  XCTAssertNotNil(self.request, @"Request cannot be nil");
 
   // Test whether the request is compressed correctly.
   NSData *requestBody = [_request body];
