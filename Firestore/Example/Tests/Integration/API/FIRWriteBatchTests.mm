@@ -346,7 +346,8 @@ long long getCurrentMemoryUsedInMb() {
   using namespace std::chrono;
   auto now = high_resolution_clock::now();
 
-  for (int iter = 0; iter != 100; ++iter) {
+    auto num_iters = 50;
+  for (int iter = 0; iter != num_iters; ++iter) {
   FIRDocumentReference *mainDoc = [self documentRef];
   FIRWriteBatch *batch = [mainDoc.firestore batch];
   // >= 500 mutations will be rejected, so use 500-1 mutations
@@ -372,7 +373,8 @@ long long getCurrentMemoryUsedInMb() {
       // about 90MB. A regression would be on the scale of 500Mb.
       XCTAssertLessThan(memoryDeltaMb, 150);
 
-      if (iter == 99)
+      std::cout << "OBCOBC finished iter " << iter << std::endl;
+      if (iter == num_iters - 1)
       [expectation fulfill];
   }];
    }

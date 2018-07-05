@@ -47,7 +47,7 @@ long long getCurrentMemoryUsedInMb() {
     return -1;
 }
 
-void log(time_pt& time, long long& mem, const char* marker = "") {
+void log(time_pt& time, long long& mem, const std::string& marker = "") {
   auto old_time = time;
   time = high_resolution_clock::now();
   auto old_mem = mem;
@@ -105,8 +105,10 @@ withAffectingBatches:(NSArray<FSTMutationBatch*>*) affectingBatches{
 - (FSTMaybeDocumentDictionary *)documentsForKeys:(const DocumentKeySet &)keys {
   auto tp = high_resolution_clock::now();
   auto mem = getCurrentMemoryUsedInMb();
-
+    static long iter;
+    
   FSTMaybeDocumentDictionary *results = [FSTMaybeDocumentDictionary maybeDocumentDictionary];
+  //@autoreleasepool {
   NSArray<FSTMutationBatch *> *affectingBatches =
       [self.mutationQueue allMutationBatchesAffectingDocumentKeys:keys];
   for (const DocumentKey &key : keys) {
@@ -118,7 +120,9 @@ withAffectingBatches:(NSArray<FSTMutationBatch*>*) affectingBatches{
     }
     results = [results dictionaryBySettingObject:maybeDoc forKey:key];
   }
-    log(tp, mem, "after documentsForKeys");
+  ++iter;
+    log(tp, mem, std::string{"after documentsForKeys"} + std::to_string(iter));
+//}
   return results;
 }
 
