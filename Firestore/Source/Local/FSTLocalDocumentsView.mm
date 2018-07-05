@@ -211,9 +211,10 @@ withAffectingBatches:(NSArray<FSTMutationBatch*>*) affectingBatches{
  */
 - (FSTDocumentDictionary *)localDocuments:(FSTDocumentDictionary *)documents {
   DocumentKeySet keySet;
-  for (FSTMaybeDocument *doc in documents) {
+    [documents enumerateKeysAndObjectsUsingBlock:^(FSTDocumentKey *key, FSTDocument *doc,
+                                                   BOOL *stop) {
     keySet.insert(doc.key);
-  }
+    }];
   NSArray<FSTMutationBatch *> * affectingBatches =
       [self.mutationQueue allMutationBatchesAffectingDocumentKeys:keySet];
 
