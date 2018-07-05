@@ -16,6 +16,7 @@
 
 #import <FirebaseFirestore/FirebaseFirestore.h>
 
+#include <mach/mach.h>
 #import <XCTest/XCTest.h>
 
 #import "Firestore/Example/Tests/Util/FSTEventAccumulator.h"
@@ -321,6 +322,46 @@
   }];
 
   [self awaitExpectations];
+}
+
+long long getCurrentMemoryUsedInMb() {
+    mach_task_basic_info info;
+    mach_msg_type_number_t size = MACH_TASK_BASIC_INFO_COUNT;
+    kern_return_t kerr = task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &size);
+    if (kerr == KERN_SUCCESS) {
+        const int bytesInMegabyte = 1000 * 1000;
+        return info.resident_size / bytesInMegabyte;
+    }
+    return -1;
+}
+
+- (void)testPerformanceForMultipleMutations {
+    [self measureMetrics:@[XCTPerformanceMetric_WallClockTime] automaticallyStartMeasuring:true forBlock:^ {
+        XCTestExpectation *expectation = [self expectationWithDescription:@"testPerformanceForMultipleMutations"];
+        FIRDocumentReference *mainDoc = [self documentRef];
+        FIRWriteBatch *batch = [mainDoc.firestore batch];
+        for (int i = 0; i != 490; ++i) {
+            FIRDocumentReference* nestedDoc = [[mainDoc collectionWithPath:@"nested"] documentWithAutoID];
+            [batch setData:@{
+                             @"a" : @"foo",
+                             @"b" : @"bar",
+                             }
+               forDocument:nestedDoc];
+        }
+        const long long memoryUsedBeforeCommittingMb = getCurrentMemoryUsedInMb();
+        XCTAssertNotEqual(memoryUsedBeforeCommittingMb, -1);
+        [batch commitWithCompletion:^(NSError *_Nullable error) {
+            XCTAssertNil(error);
+            const long long memoryUsedAfterCommittingMb = getCurrentMemoryUsedInMb();
+            XCTAssertNotEqual(memoryUsedAfterCommittingMb, -1);
+            const long long memoryDeltaMb = memoryUsedBeforeCommittingMb - memoryUsedAfterCommittingMb;
+            NSLog(@"OBC size :%lld", memoryDeltaMb);
+            XCTAssertLessThan(memoryDeltaMb, 100);
+            
+            [expectation fulfill];
+        }];
+        [self awaitExpectations];
+    }];
 }
 
 @end
