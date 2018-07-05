@@ -29,6 +29,34 @@
 #include "Firestore/core/src/firebase/firestore/model/snapshot_version.h"
 #include "Firestore/core/src/firebase/firestore/util/hard_assert.h"
 
+#include <chrono>
+#include <iostream>
+#include <mach/mach.h>
+
+using namespace std::chrono;
+using time_pt = high_resolution_clock::time_point;
+
+long long getCurrentMemoryUsedInMb() {
+    mach_task_basic_info taskInfo;
+    mach_msg_type_number_t taskInfoSize = MACH_TASK_BASIC_INFO_COUNT;
+    const auto errorCode = task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&taskInfo, &taskInfoSize);
+    if (errorCode == KERN_SUCCESS) {
+        const int bytesInMegabyte = 1000 * 1000;
+        return taskInfo.resident_size / bytesInMegabyte;
+    }
+    return -1;
+}
+
+void log(time_pt& time, long long& mem, const char* marker = "") {
+  auto old_time = time;
+  time = high_resolution_clock::now();
+  auto old_mem = mem;
+  mem = getCurrentMemoryUsedInMb();
+  std::cout << "OBCOBC " << marker << " -- time elapsed ms: "
+      << duration_cast<milliseconds>(time - old_time).count() << ", memory delta MB: "
+      << (mem - old_mem) << '\n';
+}
+
 using firebase::firestore::model::DocumentKey;
 using firebase::firestore::model::ResourcePath;
 using firebase::firestore::model::SnapshotVersion;
@@ -75,6 +103,9 @@ withAffectingBatches:(NSArray<FSTMutationBatch*>*) affectingBatches{
 }
 
 - (FSTMaybeDocumentDictionary *)documentsForKeys:(const DocumentKeySet &)keys {
+  auto tp = high_resolution_clock::now();
+  auto mem = getCurrentMemoryUsedInMb();
+
   FSTMaybeDocumentDictionary *results = [FSTMaybeDocumentDictionary maybeDocumentDictionary];
   NSArray<FSTMutationBatch *> *affectingBatches =
       [self.mutationQueue allMutationBatchesAffectingDocumentKeys:keys];
@@ -87,6 +118,7 @@ withAffectingBatches:(NSArray<FSTMutationBatch*>*) affectingBatches{
     }
     results = [results dictionaryBySettingObject:maybeDoc forKey:key];
   }
+    log(tp, mem, "after documentsForKeys");
   return results;
 }
 

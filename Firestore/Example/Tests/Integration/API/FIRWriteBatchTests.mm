@@ -22,6 +22,9 @@
 #import "Firestore/Example/Tests/Util/FSTEventAccumulator.h"
 #import "Firestore/Example/Tests/Util/FSTIntegrationTestCase.h"
 
+#include <chrono>
+#include <iostream>
+
 @interface FIRWriteBatchTests : FSTIntegrationTestCase
 @end
 
@@ -340,7 +343,10 @@ long long getCurrentMemoryUsedInMb() {
 - (void)testReasonableMemoryUsageForLotsOfMutations {
   XCTestExpectation *expectation = [self expectationWithDescription:@"testReasonableMemoryUsageForLotsOfMutations"];
 
- //   for (int i = 0; i != 10; ++i) {
+  using namespace std::chrono;
+  auto now = high_resolution_clock::now();
+
+  for (int iter = 0; iter != 100; ++iter) {
   FIRDocumentReference *mainDoc = [self documentRef];
   FIRWriteBatch *batch = [mainDoc.firestore batch];
   // >= 500 mutations will be rejected, so use 500-1 mutations
@@ -366,11 +372,13 @@ long long getCurrentMemoryUsedInMb() {
       // about 90MB. A regression would be on the scale of 500Mb.
       XCTAssertLessThan(memoryDeltaMb, 150);
 
-      //if (i == 9)
+      if (iter == 99)
       [expectation fulfill];
   }];
-   // }
+   }
   [self awaitExpectations];
+  std::cout << "OBCOBC total test time s: "
+    << duration_cast<seconds>(high_resolution_clock::now() - now).count() << std::endl;
 }
 
 @end
