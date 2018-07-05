@@ -67,7 +67,8 @@ NS_ASSUME_NONNULL_BEGIN
   return [self documentForKey:key withAffectingBatches:affectingBatches];
 }
 
-- (nullable FSTMaybeDocument *)documentForKey:(const DocumentKey &)key 
+// Internal version of documentForKey: which allows reusing `affectingBatches`.
+- (nullable FSTMaybeDocument *)documentForKey:(const DocumentKey &)key
 withAffectingBatches:(NSArray<FSTMutationBatch*>*) affectingBatches{
   FSTMaybeDocument *_Nullable remoteDoc = [self.remoteDocumentCache entryForKey:key];
   return [self localDocument:remoteDoc key:key affectingBatches:affectingBatches];
@@ -131,12 +132,12 @@ withAffectingBatches:(NSArray<FSTMutationBatch*>*) affectingBatches{
   }
 
   // Now add in results for the matchingKeys.
-  for (const DocumentKey &key : matchingKeys) {
-    FSTMaybeDocument *doc = [self documentForKey:key];
-    if ([doc isKindOfClass:[FSTDocument class]]) {
-      results = [results dictionaryBySettingObject:(FSTDocument *)doc forKey:key];
+    FSTMaybeDocumentDictionary *matchingKeysDocs = [self documentsForKeys:matchingKeys];
+    [matchingKeysDocs enumerateKeysAndObjectsUsingBlock:^(FSTDocumentKey *key, FSTMaybeDocument *doc, BOOL *stop) {
+                                                        if ([doc isKindOfClass:[FSTDocument class]]) {
+        results = [results dictionaryBySettingObject:(FSTDocument *)doc forKey:key];
     }
-  }
+                                                    }];
 
   // Finally, filter out any documents that don't actually match the query. Note that the extra
   // reference here prevents ARC from deallocating the initial unfiltered results while we're
