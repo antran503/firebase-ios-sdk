@@ -22,9 +22,6 @@
 #import "Firestore/Example/Tests/Util/FSTEventAccumulator.h"
 #import "Firestore/Example/Tests/Util/FSTIntegrationTestCase.h"
 
-#include <chrono>
-#include <iostream>
-
 @interface FIRWriteBatchTests : FSTIntegrationTestCase
 @end
 
@@ -329,6 +326,8 @@
 
 // Returns how much memory the test application is currently using, in megabytes (fractional part is
 // truncated), or -1 if the OS call fails.
+// TODO(varconst): move the helper function and the test into a new test target for performance
+// testing.
 long long getCurrentMemoryUsedInMb() {
     mach_task_basic_info taskInfo;
     mach_msg_type_number_t taskInfoSize = MACH_TASK_BASIC_INFO_COUNT;
@@ -343,13 +342,9 @@ long long getCurrentMemoryUsedInMb() {
 - (void)testReasonableMemoryUsageForLotsOfMutations {
   XCTestExpectation *expectation = [self expectationWithDescription:@"testReasonableMemoryUsageForLotsOfMutations"];
 
-  using namespace std::chrono;
-  auto now = high_resolution_clock::now();
-
-    auto num_iters = 50;
-  for (int iter = 0; iter != num_iters; ++iter) {
   FIRDocumentReference *mainDoc = [self documentRef];
   FIRWriteBatch *batch = [mainDoc.firestore batch];
+
   // >= 500 mutations will be rejected, so use 500-1 mutations
   for (int i = 0; i != 500 - 1; ++i) {
       FIRDocumentReference* nestedDoc = [[mainDoc collectionWithPath:@"nested"] documentWithAutoID];
@@ -368,19 +363,13 @@ long long getCurrentMemoryUsedInMb() {
       const long long memoryUsedAfterCommitMb = getCurrentMemoryUsedInMb();
       XCTAssertNotEqual(memoryUsedAfterCommitMb, -1);
       const long long memoryDeltaMb = memoryUsedAfterCommitMb - memoryUsedBeforeCommitMb;
-      NSLog(@"OBC size :%lld", memoryDeltaMb);
       // This by its nature cannot be a precise value. Runs on simulator seem to give an increase of
-      // about 90MB. A regression would be on the scale of 500Mb.
-      XCTAssertLessThan(memoryDeltaMb, 150);
+      // 10MB in debug mode pretty consistently. A regression would be on the scale of 500Mb.
+      XCTAssertLessThan(memoryDeltaMb, 20);
 
-      std::cout << "OBCOBC finished iter " << iter << std::endl;
-      if (iter == num_iters - 1)
       [expectation fulfill];
   }];
-   }
   [self awaitExpectations];
-  std::cout << "OBCOBC total test time s: "
-    << duration_cast<seconds>(high_resolution_clock::now() - now).count() << std::endl;
 }
 
 @end
