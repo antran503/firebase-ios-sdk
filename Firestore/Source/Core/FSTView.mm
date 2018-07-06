@@ -109,7 +109,7 @@ NS_ASSUME_NONNULL_BEGIN
     return NO;
   }
   FSTLimboDocumentChange *otherChange = (FSTLimboDocumentChange *)other;
-  return self.type == otherChange.type && [self.key isEqual:otherChange.key];
+  return self.type == otherChange.type && self.key == otherChange.key;
 }
 
 - (NSUInteger)hash {
@@ -235,7 +235,7 @@ static NSComparisonResult FSTCompareDocumentViewChangeTypes(FSTDocumentViewChang
       newDoc = (FSTDocument *)maybeNewDoc;
     }
     if (newDoc) {
-      HARD_ASSERT([key isEqual:newDoc.key], "Mismatching key in document changes: %s != %s", key,
+        HARD_ASSERT([key isEqual:newDoc.key], "Mismatching key in document changes: %s != %s", key,
                   newDoc.key.ToString());
       if (![self.query matchesDocument:newDoc]) {
         newDoc = nil;
