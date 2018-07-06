@@ -179,10 +179,10 @@ withAffectingBatches:(NSArray<FSTMutationBatch*>*) affectingBatches{
  * @return The local view of the documents.
  */
 - (FSTDocumentDictionary *)localDocuments:(FSTDocumentDictionary *)documents {
-  DocumentKeySet keySet;
+  __block DocumentKeySet keySet;
     [documents enumerateKeysAndObjectsUsingBlock:^(FSTDocumentKey *key, FSTDocument *doc,
                                                    BOOL *stop) {
-    keySet.insert(doc.key);
+    keySet = keySet.insert(doc.key);
     }];
   NSArray<FSTMutationBatch *> * affectingBatches =
       [self.mutationQueue allMutationBatchesAffectingDocumentKeys:keySet];
