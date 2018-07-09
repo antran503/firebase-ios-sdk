@@ -312,8 +312,7 @@ NS_ASSUME_NONNULL_BEGIN
   }
 
   FSTTransformMutation *otherMutation = (FSTTransformMutation *)other;
-  return self.key == otherMutation.key &&
-         self.fieldTransforms == otherMutation.fieldTransforms &&
+  return self.key == otherMutation.key && self.fieldTransforms == otherMutation.fieldTransforms &&
          self.precondition == otherMutation.precondition;
 }
 

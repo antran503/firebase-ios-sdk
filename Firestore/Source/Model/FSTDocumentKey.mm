@@ -37,14 +37,13 @@ NS_ASSUME_NONNULL_BEGIN
 }
 @end
 
-
 @implementation FSTDocumentKey
 
 + (instancetype)keyWithPath:(ResourcePath)path {
   return [[FSTDocumentKey alloc] initWithDocumentKey:DocumentKey{path}];
 }
 
-+ (instancetype)keyWithDocumentKey:(const firebase::firestore::model::DocumentKey&)documentKey {
++ (instancetype)keyWithDocumentKey:(const firebase::firestore::model::DocumentKey &)documentKey {
   return [[FSTDocumentKey alloc] initWithDocumentKey:documentKey];
 }
 
@@ -57,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 /** Designated initializer. */
-- (instancetype)initWithDocumentKey:(const DocumentKey&)key {
+- (instancetype)initWithDocumentKey:(const DocumentKey &)key {
   if (self = [super init]) {
     _impl = key;
   }
@@ -102,7 +101,7 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 + (BOOL)isDocumentKey:(const ResourcePath &)path {
-    return DocumentKey::IsDocumentKey(path);
+  return DocumentKey::IsDocumentKey(path);
 }
 
 - (const ResourcePath &)path {

@@ -69,7 +69,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 // Internal version of documentForKey: which allows reusing `affectingBatches`.
 - (nullable FSTMaybeDocument *)documentForKey:(const DocumentKey &)key
-withAffectingBatches:(NSArray<FSTMutationBatch*>*) affectingBatches{
+                         withAffectingBatches:(NSArray<FSTMutationBatch *> *)affectingBatches {
   FSTMaybeDocument *_Nullable remoteDoc = [self.remoteDocumentCache entryForKey:key];
   return [self localDocument:remoteDoc key:key affectingBatches:affectingBatches];
 }
@@ -133,12 +133,13 @@ withAffectingBatches:(NSArray<FSTMutationBatch*>*) affectingBatches{
   }
 
   // Now add in results for the matchingKeys.
-    FSTMaybeDocumentDictionary *matchingKeysDocs = [self documentsForKeys:matchingKeys];
-    [matchingKeysDocs enumerateKeysAndObjectsUsingBlock:^(FSTDocumentKey *key, FSTMaybeDocument *doc, BOOL *stop) {
-                                                        if ([doc isKindOfClass:[FSTDocument class]]) {
-        results = [results dictionaryBySettingObject:(FSTDocument *)doc forKey:key];
-    }
-                                                    }];
+  FSTMaybeDocumentDictionary *matchingKeysDocs = [self documentsForKeys:matchingKeys];
+  [matchingKeysDocs
+      enumerateKeysAndObjectsUsingBlock:^(FSTDocumentKey *key, FSTMaybeDocument *doc, BOOL *stop) {
+        if ([doc isKindOfClass:[FSTDocument class]]) {
+          results = [results dictionaryBySettingObject:(FSTDocument *)doc forKey:key];
+        }
+      }];
 
   // Finally, filter out any documents that don't actually match the query. Note that the extra
   // reference here prevents ARC from deallocating the initial unfiltered results while we're
@@ -163,7 +164,7 @@ withAffectingBatches:(NSArray<FSTMutationBatch*>*) affectingBatches{
  */
 - (nullable FSTMaybeDocument *)localDocument:(nullable FSTMaybeDocument *)document
                                          key:(const DocumentKey &)documentKey
-                                         affectingBatches:(NSArray<FSTMutationBatch *>*) affectingBatches{
+                            affectingBatches:(NSArray<FSTMutationBatch *> *)affectingBatches {
   for (FSTMutationBatch *batch in affectingBatches) {
     document = [batch applyTo:document documentKey:documentKey];
   }
@@ -180,17 +181,18 @@ withAffectingBatches:(NSArray<FSTMutationBatch*>*) affectingBatches{
  */
 - (FSTDocumentDictionary *)localDocuments:(FSTDocumentDictionary *)documents {
   __block DocumentKeySet keySet;
-    [documents enumerateKeysAndObjectsUsingBlock:^(FSTDocumentKey *key, FSTDocument *doc,
-                                                   BOOL *stop) {
-    keySet = keySet.insert(doc.key);
-    }];
-  NSArray<FSTMutationBatch *> * affectingBatches =
+  [documents
+      enumerateKeysAndObjectsUsingBlock:^(FSTDocumentKey *key, FSTDocument *doc, BOOL *stop) {
+        keySet = keySet.insert(doc.key);
+      }];
+  NSArray<FSTMutationBatch *> *affectingBatches =
       [self.mutationQueue allMutationBatchesAffectingDocumentKeys:keySet];
 
   __block FSTDocumentDictionary *result = documents;
   [documents enumerateKeysAndObjectsUsingBlock:^(FSTDocumentKey *key, FSTDocument *remoteDocument,
                                                  BOOL *stop) {
-    FSTMaybeDocument *mutatedDoc = [self localDocument:remoteDocument key:key affectingBatches:affectingBatches];
+    FSTMaybeDocument *mutatedDoc =
+        [self localDocument:remoteDocument key:key affectingBatches:affectingBatches];
     if ([mutatedDoc isKindOfClass:[FSTDeletedDocument class]]) {
       result = [result dictionaryByRemovingObjectForKey:key];
     } else if ([mutatedDoc isKindOfClass:[FSTDocument class]]) {
