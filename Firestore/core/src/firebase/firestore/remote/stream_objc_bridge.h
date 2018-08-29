@@ -23,8 +23,8 @@
 
 #include <string>
 
-#include "Firestore/core/src/firebase/firestore/model/types.h"
 #include "Firestore/core/src/firebase/firestore/model/snapshot_version.h"
+#include "Firestore/core/src/firebase/firestore/model/types.h"
 #include "Firestore/core/src/firebase/firestore/util/status.h"
 #include "grpcpp/support/byte_buffer.h"
 
@@ -69,8 +69,8 @@ class WatchStreamSerializer {
   FSTWatchChange* ToWatchChange(GCFSListenResponse* proto) const;
   model::SnapshotVersion ToSnapshotVersion(GCFSListenResponse* proto) const;
 
-  GCFSListenResponse* ParseResponse(
-      const grpc::ByteBuffer& message, util::Status* out_status) const;
+  GCFSListenResponse* ParseResponse(const grpc::ByteBuffer& message,
+                                    util::Status* out_status) const;
 
  private:
   FSTSerializerBeta* serializer_;
