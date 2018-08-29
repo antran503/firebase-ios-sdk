@@ -23,6 +23,7 @@
 
 #include <string>
 
+#include "Firestore/core/src/firebase/firestore/model/types.h"
 #include "Firestore/core/src/firebase/firestore/model/snapshot_version.h"
 #include "Firestore/core/src/firebase/firestore/util/status.h"
 #include "grpcpp/support/byte_buffer.h"
@@ -58,7 +59,7 @@ class WatchStreamSerializer {
   }
 
   GCFSListenRequest* CreateRequest(FSTQueryData* query) const;
-  GCFSListenRequest* CreateRequest(FSTTargetID target_id) const;
+  GCFSListenRequest* CreateRequest(model::TargetId target_id) const;
 
   grpc::ByteBuffer ToByteBuffer(GCFSListenRequest* request) const;
 

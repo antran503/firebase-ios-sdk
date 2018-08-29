@@ -34,6 +34,7 @@ namespace firestore {
 namespace remote {
 namespace bridge {
 
+using model::TargetId;
 using model::SnapshotVersion;
 using util::MakeString;
 using util::MakeNSError;
@@ -115,7 +116,7 @@ GCFSListenRequest* WatchStreamSerializer::CreateRequest(
 }
 
 GCFSListenRequest* WatchStreamSerializer::CreateRequest(
-    FSTTargetID target_id) const {
+    TargetId target_id) const {
   GCFSListenRequest* request = [GCFSListenRequest message];
   request.database = [serializer_ encodedDatabaseID];
   request.removeTarget = target_id;

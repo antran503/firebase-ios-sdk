@@ -26,6 +26,7 @@ namespace firestore {
 namespace remote {
 
 using auth::CredentialsProvider;
+using model::TargetId;
 using util::AsyncQueue;
 using util::TimerId;
 using util::Status;
@@ -50,7 +51,7 @@ void WatchStream::WatchQuery(FSTQueryData* query) {
   Write(serializer_bridge_.ToByteBuffer(request));
 }
 
-void WatchStream::UnwatchTargetId(FSTTargetID target_id) {
+void WatchStream::UnwatchTargetId(TargetId target_id) {
   EnsureOnQueue();
 
   GCFSListenRequest* request = serializer_bridge_.CreateRequest(target_id);

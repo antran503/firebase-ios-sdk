@@ -24,6 +24,7 @@
 #include <memory>
 #include <string>
 
+#include "Firestore/core/src/firebase/firestore/model/types.h"
 #include "Firestore/core/src/firebase/firestore/remote/datastore.h"
 #include "Firestore/core/src/firebase/firestore/remote/stream.h"
 #include "Firestore/core/src/firebase/firestore/remote/stream_objc_bridge.h"
@@ -67,7 +68,7 @@ class WatchStream : public Stream {
    * Unregisters interest in the results of the query associated with the given
    * `target_id`.
    */
-  void UnwatchTargetId(FSTTargetID target_id);
+  void UnwatchTargetId(model::TargetId target_id);
 
  private:
   std::unique_ptr<GrpcStream> CreateGrpcStream(
