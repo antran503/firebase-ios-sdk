@@ -63,16 +63,18 @@ absl::string_view MakeStringView(grpc::string_ref grpc_str) {
 
 Datastore::Datastore(const DatabaseInfo &database_info,
                      AsyncQueue *worker_queue,
-                     CredentialsProvider* credentials,
-                    FSTSerializerBeta *serializer)
+                     CredentialsProvider *credentials,
+                     FSTSerializerBeta *serializer)
     : grpc_connection_{database_info, worker_queue, &grpc_queue_},
+      worker_queue_{worker_queue},
+      credentials_{credentials},
       dedicated_executor_{CreateExecutor()},
-serializer_bridge_{serializer} {
+      serializer_bridge_{serializer} {
   dedicated_executor_->Execute([this] { PollGrpcQueue(); });
 }
 
 void Datastore::Shutdown() {
-  for (auto& call : commit_calls_) {
+  for (auto &call : commit_calls_) {
     call->Cancel();
   }
   commit_calls_.clear();
@@ -112,20 +114,25 @@ void Datastore::CommitMutations(NSArray<FSTMutation *> *mutations,
   grpc::ByteBuffer message = serializer_bridge_.ToByteBuffer(
       serializer_bridge_.CreateCommitRequest(mutations));
 
-  credentials_->GetToken([this, message, completion](util::StatusOr<Token> maybe_token) {
-    worker_queue_->EnqueueRelaxed([this, message, completion, maybe_token] () mutable {
-      if (!maybe_token.ok()) {
-        completion(util::MakeNSError(maybe_token.status()));
-      }
+  credentials_->GetToken(
+      [this, message, completion](util::StatusOr<Token> maybe_token) {
+        worker_queue_->EnqueueRelaxed([this, message, completion,
+                                       maybe_token]() mutable {
+          if (!maybe_token.ok()) {
+            completion(util::MakeNSError(maybe_token.status()));
+          }
 
-      Token token = maybe_token.ValueOrDie();
-      commit_calls_.push_back(grpc_connection_.CreateUnaryCall(
-          token.user().is_authenticated() ? token.token() : "", "/google.firestore.v1beta1.Firestore/Commit", std::move(message)));
-      auto call = commit_calls_.back().get();
-      call->Start(
-          [this, completion, call](const grpc::ByteBuffer & /*ignored_response*/,
-                             const util::Status &status) {
-            LOG_DEBUG("RPC CommitRequest completed. Error: %s: %s", status.code(), status.error_message());
+          Token token = maybe_token.ValueOrDie();
+          commit_calls_.push_back(grpc_connection_.CreateUnaryCall(
+              "/google.firestore.v1beta1.Firestore/Commit",
+              token.user().is_authenticated() ? token.token() : absl::string_view{},
+              std::move(message)));
+          auto call = commit_calls_.back().get();
+          call->Start([this, completion, call](
+                          const grpc::ByteBuffer & /*ignored_response*/,
+                          const util::Status &status) {
+            LOG_DEBUG("RPC CommitRequest completed. Error: %s: %s",
+                      status.code(), status.error_message());
             // LogHeadersForRpc(call_ptr->GetResponseHeaders(),
             // "CommitRequest");
 
@@ -143,37 +150,37 @@ void Datastore::CommitMutations(NSArray<FSTMutation *> *mutations,
             HARD_ASSERT(found != commit_calls_.end(), "Missing GrpcUnaryCall");
             commit_calls_.erase(found);
           });
-    });
-  });
+        });
+      });
 }
 
 Status Datastore::ConvertStatus(grpc::Status from) {
-    if (from.ok()) {
-      return Status::OK();
-    }
+  if (from.ok()) {
+    return Status::OK();
+  }
 
-    grpc::StatusCode error_code = from.error_code();
-    HARD_ASSERT(
-        error_code >= grpc::CANCELLED && error_code <= grpc::UNAUTHENTICATED,
-        "Unknown gRPC error code: %s", error_code);
+  grpc::StatusCode error_code = from.error_code();
+  HARD_ASSERT(
+      error_code >= grpc::CANCELLED && error_code <= grpc::UNAUTHENTICATED,
+      "Unknown gRPC error code: %s", error_code);
 
-    return {static_cast<FirestoreErrorCode>(error_code), from.error_message()};
+  return {static_cast<FirestoreErrorCode>(error_code), from.error_message()};
 }
 
 std::string Datastore::GetWhitelistedHeadersAsString(
     const GrpcStream::MetadataT &headers) {
-    static std::unordered_set<std::string> whitelist = {
-        "date", "x-google-backends", "x-google-netmon-label",
-        "x-google-service", "x-google-gfe-request-trace"};
+  static std::unordered_set<std::string> whitelist = {
+      "date", "x-google-backends", "x-google-netmon-label", "x-google-service",
+      "x-google-gfe-request-trace"};
 
-    std::string result;
-    for (const auto &kv : headers) {
-      if (whitelist.find(MakeString(kv.first)) != whitelist.end()) {
-        absl::StrAppend(&result, MakeStringView(kv.first), ": ",
-                        MakeStringView(kv.second), "\n");
-      }
+  std::string result;
+  for (const auto &kv : headers) {
+    if (whitelist.find(MakeString(kv.first)) != whitelist.end()) {
+      absl::StrAppend(&result, MakeStringView(kv.first), ": ",
+                      MakeStringView(kv.second), "\n");
     }
-    return result;
+  }
+  return result;
 }
 
 }  // namespace remote

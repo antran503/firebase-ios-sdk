@@ -239,35 +239,6 @@ using firebase::firestore::remote::WriteStream;
 - (void)commitMutations:(NSArray<FSTMutation *> *)mutations
              completion:(FSTVoidErrorBlock)completion {
   _datastore->CommitMutations(mutations, completion);
-  /*
-  GCFSCommitRequest *request = [GCFSCommitRequest message];
-  request.database = [self.serializer encodedDatabaseID];
-
-  NSMutableArray<GCFSWrite *> *mutationProtos = [NSMutableArray array];
-  for (FSTMutation *mutation in mutations) {
-    [mutationProtos addObject:[self.serializer encodedMutation:mutation]];
-  }
-  request.writesArray = mutationProtos;
-
-  RPCFactory rpcFactory = ^GRPCProtoCall * {
-    __block GRPCProtoCall *rpc = [self.service
-        RPCToCommitWithRequest:request
-                       handler:^(GCFSCommitResponse *response, NSError *_Nullable error) {
-                         error = [FSTDatastore firestoreErrorForError:error];
-                         [self.workerDispatchQueue dispatchAsync:^{
-                           if (error != nil && error.code == FIRFirestoreErrorCodeUnauthenticated) {
-                             self->_credentials->InvalidateToken();
-                           }
-                           LOG_DEBUG("RPC CommitRequest completed. Error: %s", error);
-                           [FSTDatastore logHeadersForRPC:rpc RPCName:@"CommitRequest"];
-                           completion(error);
-                         }];
-                       }];
-    return rpc;
-  };
-
-  [self invokeRPCWithFactory:rpcFactory errorHandler:completion];
-  */
 }
 
 - (void)lookupDocuments:(const std::vector<DocumentKey> &)keys
