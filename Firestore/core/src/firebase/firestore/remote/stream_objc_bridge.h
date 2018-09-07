@@ -125,6 +125,20 @@ class WriteStreamSerializer {
   NSData* last_stream_token_;
 };
 
+class DatastoreSerializer {
+ public:
+  explicit DatastoreSerializer(FSTSerializerBeta* serializer)
+      : serializer_{serializer} {
+  }
+
+  GCFSCommitRequest* CreateCommitRequest(NSArray<FSTMutation*>* mutations) const;
+  grpc::ByteBuffer ToByteBuffer(GCFSCommitRequest* request) const;
+  NSString* Describe(GCFSCommitRequest* request) const;
+
+ private:
+  FSTSerializerBeta* serializer_;
+};
+
 class WatchStreamDelegate {
  public:
   explicit WatchStreamDelegate(id delegate) : delegate_{delegate} {

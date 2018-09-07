@@ -17,19 +17,32 @@
 #ifndef FIRESTORE_CORE_SRC_FIREBASE_FIRESTORE_REMOTE_DATASTORE_H_
 #define FIRESTORE_CORE_SRC_FIREBASE_FIRESTORE_REMOTE_DATASTORE_H_
 
+#if !defined(__OBJC__)
+#error "This header only supports Objective-C++"
+#endif  // !defined(__OBJC__)
+
 #include <memory>
 #include <string>
+#include <vector>
 
+#include "Firestore/core/src/firebase/firestore/auth/credentials_provider.h"
 #include "Firestore/core/src/firebase/firestore/core/database_info.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_connection.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_stream.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_stream_observer.h"
+#include "Firestore/core/src/firebase/firestore/remote/grpc_unary_call.h"
+#include "Firestore/core/src/firebase/firestore/remote/stream_objc_bridge.h"
 #include "Firestore/core/src/firebase/firestore/util/async_queue.h"
 #include "Firestore/core/src/firebase/firestore/util/executor.h"
 #include "Firestore/core/src/firebase/firestore/util/status.h"
 #include "absl/strings/string_view.h"
 #include "grpcpp/completion_queue.h"
 #include "grpcpp/support/status.h"
+
+#import <Foundation/Foundation.h>
+#import "Firestore/Source/Core/FSTTypes.h"
+#import "Firestore/Source/Model/FSTMutation.h"
+#import "Firestore/Source/Remote/FSTSerializerBeta.h"
 
 namespace firebase {
 namespace firestore {
@@ -38,13 +51,18 @@ namespace remote {
 class Datastore {
  public:
   Datastore(const core::DatabaseInfo& database_info,
-            util::AsyncQueue* worker_queue);
+            util::AsyncQueue* worker_queue,
+            auth::CredentialsProvider* credentials,
+            FSTSerializerBeta* serializer);
 
   void Shutdown();
 
   std::unique_ptr<GrpcStream> CreateGrpcStream(absl::string_view rpc_name,
                                                absl::string_view token,
                                                GrpcStreamObserver* observer);
+
+  void CommitMutations(NSArray<FSTMutation*>* mutations,
+                       FSTVoidErrorBlock completion);
 
   static util::Status ConvertStatus(grpc::Status from);
 
@@ -62,11 +80,17 @@ class Datastore {
   static GrpcStream::MetadataT ExtractWhitelistedHeaders(
       const GrpcStream::MetadataT& headers);
 
-  // A separate executor dedicatd to polling gRPC completion queue (which is
+  util::AsyncQueue* worker_queue_ = nullptr;
+  auth::CredentialsProvider* credentials_ = nullptr;
+
+  // A separate executor dedicated to polling gRPC completion queue (which is
   // shared for all spawned `GrpcStream`s).
   std::unique_ptr<util::internal::Executor> dedicated_executor_;
   grpc::CompletionQueue grpc_queue_;
   GrpcConnection grpc_connection_;
+
+  std::vector<std::unique_ptr<GrpcUnaryCall>> commit_calls_;
+  bridge::DatastoreSerializer serializer_bridge_;
 };
 
 }  // namespace remote

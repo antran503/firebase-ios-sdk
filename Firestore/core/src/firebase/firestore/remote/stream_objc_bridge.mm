@@ -212,6 +212,29 @@ GCFSWriteResponse* WriteStreamSerializer::ParseResponse(
   return ToProto<GCFSWriteResponse>(message, out_status);
 }
 
+GCFSCommitRequest* DatastoreSerializer::CreateCommitRequest(
+    NSArray<FSTMutation*>* mutations) const {
+  GCFSCommitRequest *request = [GCFSCommitRequest message];
+  request.database = [serializer_ encodedDatabaseID];
+
+  NSMutableArray<GCFSWrite *> *mutationProtos = [NSMutableArray array];
+  for (FSTMutation *mutation in mutations) {
+    [mutationProtos addObject:[serializer_ encodedMutation:mutation]];
+  }
+  request.writesArray = mutationProtos;
+
+  return request;
+}
+
+grpc::ByteBuffer DatastoreSerializer::ToByteBuffer(
+    GCFSCommitRequest* request) const {
+  return ConvertToByteBuffer([request data]);
+}
+
+NSString* DatastoreSerializer::Describe(GCFSCommitRequest* request) const {
+  return [request description];
+}
+
 void WatchStreamDelegate::NotifyDelegateOnOpen() {
   id<FSTWatchStreamDelegate> delegate = delegate_;
   [delegate watchStreamDidOpen];

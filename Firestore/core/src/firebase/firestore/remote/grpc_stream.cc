@@ -19,7 +19,8 @@
 #include <chrono>  // NOLINT(build/c++11)
 #include <future>  // NOLINT(build/c++11)
 
-#include "Firestore/core/src/firebase/firestore/remote/datastore.h"
+//#include "Firestore/core/src/firebase/firestore/remote/datastore.h"
+#include "Firestore/core/src/firebase/firestore/remote/convert_status.h"
 
 namespace firebase {
 namespace firestore {
@@ -264,7 +265,7 @@ void GrpcStream::OnFinishedByServer(const grpc::Status& status) {
     // The call to observer could end this `GrpcStream`'s lifetime.
     GrpcStreamObserver* observer = observer_;
     UnsetObserver();
-    observer->OnStreamError(Datastore::ConvertStatus(status));
+    observer->OnStreamError(ConvertStatus(status));
   }
 }
 

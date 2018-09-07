@@ -119,7 +119,8 @@ using firebase::firestore::remote::WriteStream;
     _credentials = credentials;
     _serializer = [[FSTSerializerBeta alloc] initWithDatabaseID:&databaseInfo->database_id()];
 
-    _datastore = absl::make_unique<Datastore>(*_databaseInfo, [_workerDispatchQueue implementation]);
+    _datastore = absl::make_unique<Datastore>(*_databaseInfo, [_workerDispatchQueue implementation],
+                                              _credentials, _serializer);
   }
   return self;
 }
@@ -237,6 +238,8 @@ using firebase::firestore::remote::WriteStream;
 
 - (void)commitMutations:(NSArray<FSTMutation *> *)mutations
              completion:(FSTVoidErrorBlock)completion {
+  _datastore->CommitMutations(mutations, completion);
+  /*
   GCFSCommitRequest *request = [GCFSCommitRequest message];
   request.database = [self.serializer encodedDatabaseID];
 
@@ -264,6 +267,7 @@ using firebase::firestore::remote::WriteStream;
   };
 
   [self invokeRPCWithFactory:rpcFactory errorHandler:completion];
+  */
 }
 
 - (void)lookupDocuments:(const std::vector<DocumentKey> &)keys
@@ -347,13 +351,13 @@ using firebase::firestore::remote::WriteStream;
 }
 
 - (std::shared_ptr<WatchStream>)createWatchStreamWithDelegate:(id)delegate {
-  return std::make_shared<WatchStream>(
-      [_workerDispatchQueue implementation], _credentials, _serializer, _datastore.get(), delegate);
+  return std::make_shared<WatchStream>([_workerDispatchQueue implementation], _credentials,
+                                       _serializer, _datastore.get(), delegate);
 }
 
 - (std::shared_ptr<WriteStream>)createWriteStreamWithDelegate:(id)delegate {
-  return std::make_shared<WriteStream>(
-      [_workerDispatchQueue implementation], _credentials, _serializer, _datastore.get(), delegate);
+  return std::make_shared<WriteStream>([_workerDispatchQueue implementation], _credentials,
+                                       _serializer, _datastore.get(), delegate);
 }
 
 /** Adds headers to the RPC including any OAuth access token if provided .*/
