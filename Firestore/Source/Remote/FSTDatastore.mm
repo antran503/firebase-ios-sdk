@@ -55,26 +55,9 @@ using firebase::firestore::model::DatabaseId;
 
 NS_ASSUME_NONNULL_BEGIN
 
-// GRPC does not publicly declare a means of disabling SSL, which we need for testing. Firestore
-// directly exposes an sslEnabled setting so this is required to plumb that through. Note that our
-// own tests depend on this working so we'll know if this changes upstream.
-@interface GRPCHost
-+ (nullable instancetype)hostWithAddress:(NSString *)address;
-@property(nonatomic, getter=isSecure) BOOL secure;
-@end
-
-static NSString *const kXGoogAPIClientHeader = @"x-goog-api-client";
-static NSString *const kGoogleCloudResourcePrefix = @"google-cloud-resource-prefix";
-
-/** Function typedef used to create RPCs. */
-typedef GRPCProtoCall * (^RPCFactory)(void);
-
 #pragma mark - FSTDatastore
 
 @interface FSTDatastore ()
-
-/** The GRPC service for Firestore. */
-@property(nonatomic, strong, readonly) GCFSFirestore *service;
 
 @property(nonatomic, strong, readonly) FSTDispatchQueue *workerDispatchQueue;
 
@@ -109,12 +92,6 @@ using firebase::firestore::remote::WriteStream;
                          credentials:(CredentialsProvider *)credentials {
   if (self = [super init]) {
     _databaseInfo = databaseInfo;
-    NSString *host = util::WrapNSString(databaseInfo->host());
-    if (!databaseInfo->ssl_enabled()) {
-      GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
-      hostConfig.secure = NO;
-    }
-    _service = [GCFSFirestore serviceWithHost:host];
     _workerDispatchQueue = workerDispatchQueue;
     _credentials = credentials;
     _serializer = [[FSTSerializerBeta alloc] initWithDatabaseID:&databaseInfo->database_id()];
