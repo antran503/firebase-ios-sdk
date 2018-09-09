@@ -27,6 +27,7 @@
 
 #include "Firestore/core/src/firebase/firestore/auth/credentials_provider.h"
 #include "Firestore/core/src/firebase/firestore/core/database_info.h"
+#include "Firestore/core/src/firebase/firestore/model/document_key.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_connection.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_stream.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_stream_observer.h"
@@ -63,6 +64,8 @@ class Datastore {
 
   void CommitMutations(NSArray<FSTMutation*>* mutations,
                        FSTVoidErrorBlock completion);
+  void LookupDocuments(const std::vector<model::DocumentKey>& keys,
+                       FSTVoidMaybeDocumentArrayErrorBlock completion);
 
   static util::Status ConvertStatus(grpc::Status from);
 
@@ -77,6 +80,10 @@ class Datastore {
  private:
   void PollGrpcQueue();
 
+  using OnToken = std::function<void(absl::string_view)>;
+  using OnTokenError = std::function<void(const util::Status&)>;
+  void WithToken(OnToken on_token, OnTokenError on_error);
+
   static GrpcStream::MetadataT ExtractWhitelistedHeaders(
       const GrpcStream::MetadataT& headers);
 
@@ -90,6 +97,7 @@ class Datastore {
   GrpcConnection grpc_connection_;
 
   std::vector<std::unique_ptr<GrpcUnaryCall>> commit_calls_;
+  std::vector<std::unique_ptr<GrpcStreamingReader>> lookup_calls_;
   bridge::DatastoreSerializer serializer_bridge_;
 };
 

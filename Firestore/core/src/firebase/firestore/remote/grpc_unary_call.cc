@@ -16,6 +16,8 @@
 
 #include "Firestore/core/src/firebase/firestore/remote/grpc_unary_call.h"
 
+#include <utility>
+
 #include "Firestore/core/src/firebase/firestore/remote/convert_status.h"
 
 namespace firebase {
@@ -27,12 +29,12 @@ using util::AsyncQueue;
 GrpcUnaryCall::GrpcUnaryCall(
     std::unique_ptr<grpc::ClientContext> context,
     std::unique_ptr<grpc::GenericClientAsyncResponseReader> call,
-    const grpc::ByteBuffer& message,
-    AsyncQueue* worker_queue)
+    AsyncQueue* worker_queue,
+    const grpc::ByteBuffer& message) 
     : context_{std::move(context)},
       call_{std::move(call)},
-      message_{message},
-      worker_queue_{worker_queue} {
+      worker_queue_{worker_queue},
+      message_{message} {
 }
 
 GrpcUnaryCall::~GrpcUnaryCall() {
@@ -42,21 +44,19 @@ GrpcUnaryCall::~GrpcUnaryCall() {
 
 void GrpcUnaryCall::Start(CallbackT callback) {
   callback_ = callback;
-  // context_->set_initial_metadata_corked(true);
   call_->StartCall();
 
-  auto* completion = new GrpcCompletion(
-      worker_queue_,
-      [this](bool /*ignored_ok*/, const GrpcCompletion* completion) {
+  finish_completion_ = new GrpcCompletion(
+      worker_queue_, [this](bool, const GrpcCompletion* completion) {
         // Ignoring ok; presumably, status is a strict superset.
         finish_completion_ = nullptr;
-        callback_(*completion->message(),
-                  ConvertStatus(*completion->status()));
+        callback_(*completion->message(), ConvertStatus(*completion->status()));
         // This `GrpcUnaryCall`'s lifetime might have been ended by the
         // callback.
       });
 
-  call_->Finish(completion->message(), completion->status(), completion);
+  call_->Finish(finish_completion_->message(), finish_completion_->status(),
+                finish_completion_);
 }
 
 void GrpcUnaryCall::Cancel() {

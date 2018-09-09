@@ -88,11 +88,6 @@ NS_ASSUME_NONNULL_BEGIN
 /** Returns YES if the given error indicates the RPC associated with it may not be retried. */
 + (BOOL)isPermanentWriteError:(NSError *)error;
 
-/** Adds headers to the RPC including any OAuth access token if provided .*/
-+ (void)prepareHeadersForRPC:(GRPCCall *)rpc
-                  databaseID:(const firebase::firestore::model::DatabaseId *)databaseID
-                       token:(const absl::string_view)token;
-
 /** Looks up a list of documents in datastore. */
 - (void)lookupDocuments:(const std::vector<firebase::firestore::model::DocumentKey> &)keys
              completion:(FSTVoidMaybeDocumentArrayErrorBlock)completion;

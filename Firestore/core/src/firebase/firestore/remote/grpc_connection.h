@@ -22,6 +22,7 @@
 #include "Firestore/core/src/firebase/firestore/core/database_info.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_stream.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_stream_observer.h"
+#include "Firestore/core/src/firebase/firestore/remote/grpc_streaming_reader.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_unary_call.h"
 #include "absl/strings/string_view.h"
 #include "grpcpp/channel.h"
@@ -58,6 +59,10 @@ class GrpcConnection {
                                            GrpcStreamObserver* observer);
 
   std::unique_ptr<GrpcUnaryCall> CreateUnaryCall(absl::string_view rpc_name,
+                                           absl::string_view token,
+                                           const grpc::ByteBuffer& message);
+
+  std::unique_ptr<GrpcStreamingReader> CreateStreamingReader(absl::string_view rpc_name,
                                            absl::string_view token,
                                            const grpc::ByteBuffer& message);
 

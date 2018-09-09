@@ -17,12 +17,14 @@
 #include "Firestore/core/src/firebase/firestore/remote/stream_objc_bridge.h"
 
 #include <iomanip>
+#include <map>
 #include <sstream>
 #include <vector>
 
 #import "Firestore/Source/API/FIRFirestore+Internal.h"
 #import "Firestore/Source/Remote/FSTStream.h"
 
+#include "Firestore/core/src/firebase/firestore/model/document_key.h"
 #include "Firestore/core/src/firebase/firestore/model/snapshot_version.h"
 #include "Firestore/core/src/firebase/firestore/util/error_apple.h"
 #include "Firestore/core/src/firebase/firestore/util/hard_assert.h"
@@ -34,6 +36,7 @@ namespace firestore {
 namespace remote {
 namespace bridge {
 
+using model::DocumentKey;
 using model::TargetId;
 using model::SnapshotVersion;
 using util::MakeString;
@@ -214,11 +217,11 @@ GCFSWriteResponse* WriteStreamSerializer::ParseResponse(
 
 GCFSCommitRequest* DatastoreSerializer::CreateCommitRequest(
     NSArray<FSTMutation*>* mutations) const {
-  GCFSCommitRequest *request = [GCFSCommitRequest message];
+  GCFSCommitRequest* request = [GCFSCommitRequest message];
   request.database = [serializer_ encodedDatabaseID];
 
-  NSMutableArray<GCFSWrite *> *mutationProtos = [NSMutableArray array];
-  for (FSTMutation *mutation in mutations) {
+  NSMutableArray<GCFSWrite*>* mutationProtos = [NSMutableArray array];
+  for (FSTMutation* mutation in mutations) {
     [mutationProtos addObject:[serializer_ encodedMutation:mutation]];
   }
   request.writesArray = mutationProtos;
@@ -231,8 +234,49 @@ grpc::ByteBuffer DatastoreSerializer::ToByteBuffer(
   return ConvertToByteBuffer([request data]);
 }
 
-NSString* DatastoreSerializer::Describe(GCFSCommitRequest* request) const {
-  return [request description];
+GCFSBatchGetDocumentsRequest* DatastoreSerializer::CreateLookupRequest(
+    const std::vector<DocumentKey>& keys) const {
+  GCFSBatchGetDocumentsRequest* request =
+      [GCFSBatchGetDocumentsRequest message];
+
+  request.database = [serializer_ encodedDatabaseID];
+  for (const DocumentKey& key : keys) {
+    [request.documentsArray addObject:[serializer_ encodedDocumentKey:key]];
+  }
+
+  return request;
+}
+
+grpc::ByteBuffer DatastoreSerializer::ToByteBuffer(
+    GCFSBatchGetDocumentsRequest* request) const {
+  return ConvertToByteBuffer([request data]);
+}
+
+NSArray<FSTMaybeDocument*>* DatastoreSerializer::MergeLookupResponses(
+    const std::vector<grpc::ByteBuffer>& responses, Status* out_status) const {
+  std::map<DocumentKey, FSTMaybeDocument*> results;
+
+  for (const auto& response : responses) {
+    auto* proto = ToProto<GCFSBatchGetDocumentsResponse>(response, out_status);
+    if (!out_status->ok()) {
+      return nil;
+    }
+    FSTMaybeDocument* doc =
+        [serializer_ decodedMaybeDocumentFromBatch:proto];
+    results[doc.key] = doc;
+  }
+  NSMutableArray<FSTMaybeDocument*>* docs =
+      [NSMutableArray arrayWithCapacity:results.size()];
+  for (const auto& kv : results) {
+    [docs addObject:kv.second];
+  }
+  
+  return docs;
+}
+
+FSTMaybeDocument* DatastoreSerializer::ToMaybeDocument(
+    GCFSBatchGetDocumentsResponse* response) const {
+  return [serializer_ decodedMaybeDocumentFromBatch:response];
 }
 
 void WatchStreamDelegate::NotifyDelegateOnOpen() {

@@ -156,9 +156,13 @@ void Stream::BackoffAndTryRestarting() {
 void Stream::ResumeStartFromBackoff() {
   EnsureOnQueue();
 
-  HARD_ASSERT(state_ == State::Backoff, "Backoff elapsed but state is now: %s",
+  if (state_ != State::Backoff) {
+    int i = 0;
+    ++i;
+    HARD_ASSERT(state_ == State::Backoff, "Backoff elapsed but state is now: %s",
               state_);
-
+  }
+  
   state_ = State::Initial;
   Start();
   HARD_ASSERT(IsStarted(), "Stream should have started.");
@@ -237,8 +241,8 @@ void Stream::Stop() {
   if (grpc_stream_) {
     LOG_DEBUG("%s Finishing GRPC stream", GetDebugDescription());
     FinishGrpcStream(grpc_stream_.get());
-    ResetGrpcStream();
   }
+  ResetGrpcStream();
 
   // If this is an intentional close ensure we don't delay our next connection
   // attempt.

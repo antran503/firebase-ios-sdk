@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-#ifndef FIRESTORE_CORE_SRC_FIREBASE_FIRESTORE_REMOTE_GRPC_UNARY_CALL_H_
-#define FIRESTORE_CORE_SRC_FIREBASE_FIRESTORE_REMOTE_GRPC_UNARY_CALL_H_
+#ifndef FIRESTORE_CORE_SRC_FIREBASE_FIRESTORE_REMOTE_GRPC_STREAMING_READER_H_
+#define FIRESTORE_CORE_SRC_FIREBASE_FIRESTORE_REMOTE_GRPC_STREAMING_READER_H_
 
 #include <functional>
 #include <map>
 #include <memory>
+#include <vector>
 
 #include "Firestore/core/src/firebase/firestore/remote/grpc_completion.h"
 #include "Firestore/core/src/firebase/firestore/util/async_queue.h"
@@ -32,36 +33,54 @@ namespace firebase {
 namespace firestore {
 namespace remote {
 
-class GrpcUnaryCall {
+class GrpcStreamingReader {
  public:
   using MetadataT = std::multimap<grpc::string_ref, grpc::string_ref>;
-  using CallbackT =
-      std::function<void(const grpc::ByteBuffer&, const util::Status&)>;
+  using CallbackT = std::function<void(const util::Status&, const std::vector<grpc::ByteBuffer>&)>;
 
-  GrpcUnaryCall(std::unique_ptr<grpc::ClientContext> context,
-                std::unique_ptr<grpc::GenericClientAsyncResponseReader> call,
-                util::AsyncQueue* worker_queue,
-                const grpc::ByteBuffer& message);
-  ~GrpcUnaryCall();
+  GrpcStreamingReader(std::unique_ptr<grpc::ClientContext> context,
+             std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call,
+             util::AsyncQueue* firestore_queue,
+             const grpc::ByteBuffer& message);
+  ~GrpcStreamingReader();
 
   void Start(CallbackT callback);
+
   void Cancel();
 
+  /**
+   * Returns the metadata received from the server.
+   *
+   * Can only be called once the stream has opened.
+   */
   MetadataT GetResponseHeaders() const;
 
  private:
+  void WriteRequest();
+  void Read();
+
+  void OnOperationFailed();
+
+  using OnSuccess = std::function<void(const GrpcCompletion*)>;
+  void SetCompletion(const OnSuccess& callback);
+  void FastFinishCompletion();
+
   std::unique_ptr<grpc::ClientContext> context_;
-  std::unique_ptr<grpc::GenericClientAsyncResponseReader> call_;
-  grpc::ByteBuffer message_;
+  std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call_;
 
   util::AsyncQueue* worker_queue_ = nullptr;
 
-  GrpcCompletion* finish_completion_ = nullptr;
+  // There is never more than a single pending completion; the full chain is:
+  // write -> read -> [read...] -> finish
+  GrpcCompletion* completion_ = nullptr;
+
   CallbackT callback_;
+  grpc::ByteBuffer request_;
+  std::vector<grpc::ByteBuffer> responses_;
 };
 
 }  // namespace remote
 }  // namespace firestore
 }  // namespace firebase
 
-#endif  // FIRESTORE_CORE_SRC_FIREBASE_FIRESTORE_REMOTE_GRPC_UNARY_CALL_H_
+#endif  // FIRESTORE_CORE_SRC_FIREBASE_FIRESTORE_REMOTE_GRPC_STREAMING_READER_H_
