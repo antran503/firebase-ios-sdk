@@ -86,12 +86,13 @@ class Datastore {
 
   static GrpcStream::MetadataT ExtractWhitelistedHeaders(
       const GrpcStream::MetadataT& headers);
+  void LogHeaders(absl::string_view headers, absl::string_view rpc);
 
   util::AsyncQueue* worker_queue_ = nullptr;
   auth::CredentialsProvider* credentials_ = nullptr;
 
   // A separate executor dedicated to polling gRPC completion queue (which is
-  // shared for all spawned `GrpcStream`s).
+  // shared for all spawned gRPC streams and calls).
   std::unique_ptr<util::internal::Executor> dedicated_executor_;
   grpc::CompletionQueue grpc_queue_;
   GrpcConnection grpc_connection_;
