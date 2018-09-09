@@ -72,13 +72,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)shutdown;
 
-/**
- * Takes a dictionary of (HTTP) response headers and returns the set of whitelisted headers
- * (for logging purposes).
- */
-+ (NSDictionary<NSString *, NSString *> *)extractWhiteListedHeaders:
-    (NSDictionary<NSString *, NSString *> *)header;
-
 /** Converts the error to a FIRFirestoreErrorDomain error. */
 + (NSError *)firestoreErrorForError:(NSError *)error;
 

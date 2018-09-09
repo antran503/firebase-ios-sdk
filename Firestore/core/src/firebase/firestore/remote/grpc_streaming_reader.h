@@ -36,12 +36,14 @@ namespace remote {
 class GrpcStreamingReader {
  public:
   using MetadataT = std::multimap<grpc::string_ref, grpc::string_ref>;
-  using CallbackT = std::function<void(const util::Status&, const std::vector<grpc::ByteBuffer>&)>;
+  using CallbackT = std::function<void(const util::Status&,
+                                       const std::vector<grpc::ByteBuffer>&)>;
 
-  GrpcStreamingReader(std::unique_ptr<grpc::ClientContext> context,
-             std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call,
-             util::AsyncQueue* firestore_queue,
-             const grpc::ByteBuffer& message);
+  GrpcStreamingReader(
+      std::unique_ptr<grpc::ClientContext> context,
+      std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call,
+      util::AsyncQueue* firestore_queue,
+      const grpc::ByteBuffer& message);
   ~GrpcStreamingReader();
 
   void Start(CallbackT callback);

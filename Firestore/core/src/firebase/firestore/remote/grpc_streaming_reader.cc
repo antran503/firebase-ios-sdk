@@ -59,7 +59,8 @@ void GrpcStreamingReader::WriteRequest() {
   *completion_->message() = std::move(request_);
 
   grpc::WriteOptions options;
-  call_->WriteLast(*completion_->message(), options.set_last_message(), completion_);
+  call_->WriteLast(*completion_->message(), options.set_last_message(),
+                   completion_);
 }
 
 void GrpcStreamingReader::Read() {
@@ -97,7 +98,7 @@ void GrpcStreamingReader::FastFinishCompletion() {
 
 void GrpcStreamingReader::OnOperationFailed() {
   SetCompletion([this](const GrpcCompletion* completion) {
-      HARD_ASSERT(callback_, "GrpcStreamingReader finished without a callback ");
+    HARD_ASSERT(callback_, "GrpcStreamingReader finished without a callback ");
     callback_(ConvertStatus(*completion->status()), responses_);
   });
   call_->Finish(completion_->status(), completion_);

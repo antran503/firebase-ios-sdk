@@ -30,7 +30,7 @@ GrpcUnaryCall::GrpcUnaryCall(
     std::unique_ptr<grpc::ClientContext> context,
     std::unique_ptr<grpc::GenericClientAsyncResponseReader> call,
     AsyncQueue* worker_queue,
-    const grpc::ByteBuffer& message) 
+    const grpc::ByteBuffer& message)
     : context_{std::move(context)},
       call_{std::move(call)},
       worker_queue_{worker_queue},

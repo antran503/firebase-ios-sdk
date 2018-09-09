@@ -193,49 +193,6 @@ using firebase::firestore::remote::WriteStream;
   }
 }
 
-/** Returns the string to be used as x-goog-api-client header value. */
-+ (NSString *)googAPIClientHeaderValue {
-  // TODO(dimond): This should ideally also include the grpc version, however, gRPC defines the
-  // version as a macro, so it would be hardcoded based on version we have at compile time of
-  // the Firestore library, rather than the version available at runtime/at compile time by the
-  // user of the library.
-  return [NSString stringWithFormat:@"gl-objc/ fire/%s grpc/", FIRFirestoreVersionString];
-}
-
-/** Returns the string to be used as google-cloud-resource-prefix header value. */
-+ (NSString *)googleCloudResourcePrefixForDatabaseID:(const DatabaseId *)databaseID {
-  return [NSString stringWithFormat:@"projects/%s/databases/%s", databaseID->project_id().c_str(),
-                                    databaseID->database_id().c_str()];
-}
-/**
- * Takes a dictionary of (HTTP) response headers and returns the set of whitelisted headers
- * (for logging purposes).
- */
-+ (NSDictionary<NSString *, NSString *> *)extractWhiteListedHeaders:
-    (NSDictionary<NSString *, NSString *> *)headers {
-  NSMutableDictionary<NSString *, NSString *> *whiteListedHeaders =
-      [NSMutableDictionary dictionary];
-  NSArray<NSString *> *whiteList = @[
-    @"date", @"x-google-backends", @"x-google-netmon-label", @"x-google-service",
-    @"x-google-gfe-request-trace"
-  ];
-  [headers
-      enumerateKeysAndObjectsUsingBlock:^(NSString *headerName, NSString *headerValue, BOOL *stop) {
-        if ([whiteList containsObject:[headerName lowercaseString]]) {
-          whiteListedHeaders[headerName] = headerValue;
-        }
-      }];
-  return whiteListedHeaders;
-}
-
-/** Logs the (whitelisted) headers returned for an GRPCProtoCall RPC. */
-+ (void)logHeadersForRPC:(GRPCProtoCall *)rpc RPCName:(NSString *)rpcName {
-  if ([FIRFirestore isLoggingEnabled]) {
-    LOG_DEBUG("RPC %s returned headers (whitelisted): %s", rpcName,
-              [FSTDatastore extractWhiteListedHeaders:rpc.responseHeaders]);
-  }
-}
-
 - (void)commitMutations:(NSArray<FSTMutation *> *)mutations
              completion:(FSTVoidErrorBlock)completion {
   _datastore->CommitMutations(mutations, completion);
