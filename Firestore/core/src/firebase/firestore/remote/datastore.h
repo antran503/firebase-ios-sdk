@@ -81,8 +81,8 @@ class Datastore {
   void PollGrpcQueue();
 
   using OnToken = std::function<void(absl::string_view)>;
-  using OnTokenError = std::function<void(const util::Status&)>;
-  void WithToken(OnToken on_token, OnTokenError on_error);
+  using OnError = std::function<void(const util::Status&)>;
+  void WithToken(const OnToken& on_token, const OnError& on_error);
 
   static GrpcStream::MetadataT ExtractWhitelistedHeaders(
       const GrpcStream::MetadataT& headers);

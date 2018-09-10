@@ -122,6 +122,10 @@ void GrpcStreamingReader::SetCompletion(const OnSuccess& on_success) {
   completion_ = new GrpcCompletion{worker_queue_, std::move(decorated)};
 }
 
+GrpcStreamingReader::MetadataT GrpcStreamingReader::GetResponseHeaders() const {
+  return context_->GetServerInitialMetadata();
+}
+
 }  // namespace remote
 }  // namespace firestore
 }  // namespace firebase

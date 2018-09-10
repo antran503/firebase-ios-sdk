@@ -60,6 +60,30 @@ absl::string_view MakeStringView(grpc::string_ref grpc_str) {
   return {grpc_str.begin(), grpc_str.size()};
 }
 
+template <typename T>
+void LogGrpcCallFinished(absl::string_view rpc_name,
+                         T *call,
+                         const Status &status) {
+  LOG_DEBUG("RPC %s completed. Error: %s: %s", rpc_name, status.code(),
+            status.error_message());
+  if (bridge::IsLoggingEnabled()) {
+    auto headers =
+        Datastore::GetWhitelistedHeadersAsString(call->GetResponseHeaders());
+    LOG_DEBUG("RPC %s returned headers (whitelisted): %s", rpc_name, headers);
+  }
+}
+
+template <typename T>
+void RemoveGrpcCall(std::vector<std::unique_ptr<T>>* container, T* to_remove) {
+  auto found =
+      std::find_if(container->begin(), container->end(),
+                   [to_remove](const std::unique_ptr<T> &call) {
+                     return call.get() == to_remove;
+                   });
+  HARD_ASSERT(found != container->end(), "Missing gRPC call");
+  container->erase(found);
+}
+
 }  // namespace
 
 Datastore::Datastore(const DatabaseInfo &database_info,
@@ -75,7 +99,7 @@ Datastore::Datastore(const DatabaseInfo &database_info,
 }
 
 void Datastore::Shutdown() {
-  for (auto &call : commit_calls_) {
+for (auto &call : commit_calls_) {
     call->Cancel();
   }
   commit_calls_.clear();
@@ -123,36 +147,34 @@ void Datastore::CommitMutations(NSArray<FSTMutation *> *mutations,
     completion(util::MakeNSError(status));
   };
 
+  auto on_success =
+      [completion](const grpc::ByteBuffer & /*ignored_response*/) {
+        completion(nil);
+      };
+
   WithToken(
-      [this, message, completion](absl::string_view token) {
+      [this, message, on_success, on_error](absl::string_view token) {
         commit_calls_.push_back(grpc_connection_.CreateUnaryCall(
             "/google.firestore.v1beta1.Firestore/Commit", token,
             std::move(message)));
-
         GrpcUnaryCall *call = commit_calls_.back().get();
-        call->Start([this, completion, call](
-                        const grpc::ByteBuffer & /*ignored_response*/,
-                        const util::Status &status) {
-          LOG_DEBUG("RPC CommitRequest completed. Error: %s: %s", status.code(),
-                    status.error_message());
-          LogHeaders(
-              GetWhitelistedHeadersAsString(call_ptr->GetResponseHeaders()),
-              "CommitRequest");
 
-          if (status.code() == FirestoreErrorCode::Unauthenticated) {
-            credentials_->InvalidateToken();
-          }
+        call->Start(
+            [this, on_success, on_error, call](const grpc::ByteBuffer &response,
+                                               const util::Status &status) {
+              LogGrpcCallFinished("CommitRequest", call, status);
+              if (status.code() == FirestoreErrorCode::Unauthenticated) {
+                credentials_->InvalidateToken();
+              }
 
-          completion(util::MakeNSError(status));
+              if (status.ok()) {
+                on_success(response);
+              } else {
+                on_error(status);
+              }
 
-          auto found =
-              std::find_if(commit_calls_.begin(), commit_calls_.end(),
-                           [call](const std::unique_ptr<GrpcUnaryCall> &rhs) {
-                             return call == rhs.get();
-                           });
-          HARD_ASSERT(found != commit_calls_.end(), "Missing GrpcUnaryCall");
-          commit_calls_.erase(found);
-        });
+              RemoveGrpcCall(&commit_calls_, call);
+            });
       },
       on_error);
 }
@@ -167,57 +189,52 @@ void Datastore::LookupDocuments(
     completion(nil, util::MakeNSError(status));
   };
 
+  auto on_success = [this, completion, on_error](const std::vector<grpc::ByteBuffer>& responses) {
+    Status parse_status;
+    NSArray<FSTMaybeDocument *> *docs =
+        serializer_bridge_.MergeLookupResponses(responses, &parse_status);
+    if (!parse_status.ok()) {
+      on_error(parse_status);
+    } else {
+      completion(docs, nil);
+    }
+  };
+
   WithToken(
-      [this, message, completion](absl::string_view token) {
+      [this, message, on_success, on_error](absl::string_view token) {
         lookup_calls_.push_back(grpc_connection_.CreateStreamingReader(
             "/google.firestore.v1beta1.Firestore/BatchGetDocuments", token,
             std::move(message)));
-
         GrpcStreamingReader *reader = lookup_calls_.back().get();
-        reader->Start([this, completion, reader](
+
+        reader->Start([this, on_success, on_error, reader](
                           const util::Status &status,
-                          const std::vector<grpc::ByteBuffer> &response) {
-          LOG_DEBUG("RPC BatchGetDocuments completed. Error: %s: %s",
-                    status.code(), status.error_message());
-          LogHeaders(
-              GetWhitelistedHeadersAsString(call_ptr->GetResponseHeaders()),
-              "BatchGetDocuments");
+                          const std::vector<grpc::ByteBuffer> &responses) {
+          LogGrpcCallFinished("BatchGetDocuments", reader, status);
+          if (status.code() == FirestoreErrorCode::Unauthenticated) {
+            credentials_->InvalidateToken();
+          }
 
           if (!status.ok()) {
-            if (status.code() == FirestoreErrorCode::Unauthenticated) {
-              credentials_->InvalidateToken();
-            }
             on_error(status);
+          } else {
+            on_success(responses);
           }
 
-          Status parse_status;
-          NSArray<FSTMaybeDocument *> *docs =
-              serializer_bridge_.MergeLookupResponses(response, &parse_status);
-          if (!parse_status.ok()) {
-            completion(nil, util::MakeNSError(parse_status));
-          }
-          completion(docs, nil);
-
-          auto found = std::find_if(
-              lookup_calls_.begin(), lookup_calls_.end(),
-              [reader](const std::unique_ptr<GrpcStreamingReader> &rhs) {
-                return reader == rhs.get();
-              });
-          HARD_ASSERT(found != lookup_calls_.end(),
-                      "Missing GrpcStreamingReader");
-          lookup_calls_.erase(found);
+          RemoveGrpcCall(&lookup_calls_, reader);
         });
       },
       on_error);
 }
 
-void Datastore::WithToken(OnToken on_token, OnTokenError on_error) {
+void Datastore::WithToken(const OnToken& on_token, const OnError& on_error) {
   credentials_->GetToken(
       [this, on_token, on_error](util::StatusOr<Token> maybe_token) {
         worker_queue_->EnqueueRelaxed([this, maybe_token, on_token, on_error] {
           if (!maybe_token.ok()) {
             on_error(maybe_token.status());
           }
+
           Token token = maybe_token.ValueOrDie();
           on_token(token.user().is_authenticated() ? token.token()
                                                    : absl::string_view{});
@@ -252,12 +269,6 @@ std::string Datastore::GetWhitelistedHeadersAsString(
     }
   }
   return result;
-}
-
-void Datastore::LogHeaders(absl::string_view headers, absl::string_view rpc) {
-  if (bridge::IsLoggingEnabled()) {
-    LOG_DEBUG("RPC %s returned headers (whitelisted): %s", rpc, headers);
-  }
 }
 
 }  // namespace remote
