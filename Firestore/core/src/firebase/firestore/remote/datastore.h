@@ -32,7 +32,7 @@
 #include "Firestore/core/src/firebase/firestore/remote/grpc_stream.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_stream_observer.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_unary_call.h"
-#include "Firestore/core/src/firebase/firestore/remote/stream_objc_bridge.h"
+#include "Firestore/core/src/firebase/firestore/remote/remote_objc_bridge.h"
 #include "Firestore/core/src/firebase/firestore/util/async_queue.h"
 #include "Firestore/core/src/firebase/firestore/util/executor.h"
 #include "Firestore/core/src/firebase/firestore/util/status.h"
@@ -49,7 +49,7 @@ namespace firebase {
 namespace firestore {
 namespace remote {
 
-class Datastore {
+class Datastore : public std::enable_shared_from_this<Datastore> {
  public:
   Datastore(const core::DatabaseInfo& database_info,
             util::AsyncQueue* worker_queue,
@@ -66,8 +66,6 @@ class Datastore {
                        FSTVoidErrorBlock completion);
   void LookupDocuments(const std::vector<model::DocumentKey>& keys,
                        FSTVoidMaybeDocumentArrayErrorBlock completion);
-
-  static util::Status ConvertStatus(grpc::Status from);
 
   static std::string GetWhitelistedHeadersAsString(
       const GrpcStream::MetadataT& headers);

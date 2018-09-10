@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "Firestore/core/src/firebase/firestore/remote/stream_objc_bridge.h"
+#include "Firestore/core/src/firebase/firestore/remote/remote_objc_bridge.h"
 
 #include <iomanip>
 #include <map>

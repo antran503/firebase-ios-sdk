@@ -44,7 +44,6 @@
 #include "Firestore/core/src/firebase/firestore/util/hard_assert.h"
 #include "Firestore/core/src/firebase/firestore/util/log.h"
 #include "Firestore/core/src/firebase/firestore/util/string_apple.h"
-#include "absl/memory/memory.h"
 
 namespace util = firebase::firestore::util;
 using firebase::firestore::auth::CredentialsProvider;
@@ -76,7 +75,7 @@ using firebase::firestore::remote::WatchStream;
 using firebase::firestore::remote::WriteStream;
 
 @implementation FSTDatastore {
-  std::unique_ptr<Datastore> _datastore;
+  std::shared_ptr<Datastore> _datastore;
 }
 
 + (instancetype)datastoreWithDatabase:(const DatabaseInfo *)databaseInfo
@@ -96,7 +95,7 @@ using firebase::firestore::remote::WriteStream;
     _credentials = credentials;
     _serializer = [[FSTSerializerBeta alloc] initWithDatabaseID:&databaseInfo->database_id()];
 
-    _datastore = absl::make_unique<Datastore>(*_databaseInfo, [_workerDispatchQueue implementation],
+    _datastore = std::make_shared<Datastore>(*_databaseInfo, [_workerDispatchQueue implementation],
                                               _credentials, _serializer);
   }
   return self;

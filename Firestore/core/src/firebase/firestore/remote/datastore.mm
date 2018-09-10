@@ -74,12 +74,11 @@ void LogGrpcCallFinished(absl::string_view rpc_name,
 }
 
 template <typename T>
-void RemoveGrpcCall(std::vector<std::unique_ptr<T>>* container, T* to_remove) {
-  auto found =
-      std::find_if(container->begin(), container->end(),
-                   [to_remove](const std::unique_ptr<T> &call) {
-                     return call.get() == to_remove;
-                   });
+void RemoveGrpcCall(std::vector<std::unique_ptr<T>> *container, T *to_remove) {
+  auto found = std::find_if(container->begin(), container->end(),
+                            [to_remove](const std::unique_ptr<T> &call) {
+                              return call.get() == to_remove;
+                            });
   HARD_ASSERT(found != container->end(), "Missing gRPC call");
   container->erase(found);
 }
@@ -99,7 +98,7 @@ Datastore::Datastore(const DatabaseInfo &database_info,
 }
 
 void Datastore::Shutdown() {
-for (auto &call : commit_calls_) {
+  for (auto &call : commit_calls_) {
     call->Cancel();
   }
   commit_calls_.clear();
@@ -189,16 +188,17 @@ void Datastore::LookupDocuments(
     completion(nil, util::MakeNSError(status));
   };
 
-  auto on_success = [this, completion, on_error](const std::vector<grpc::ByteBuffer>& responses) {
-    Status parse_status;
-    NSArray<FSTMaybeDocument *> *docs =
-        serializer_bridge_.MergeLookupResponses(responses, &parse_status);
-    if (!parse_status.ok()) {
-      on_error(parse_status);
-    } else {
-      completion(docs, nil);
-    }
-  };
+  auto on_success =
+      [this, completion](const std::vector<grpc::ByteBuffer> &responses) {
+        Status parse_status;
+        NSArray<FSTMaybeDocument *> *docs =
+            serializer_bridge_.MergeLookupResponses(responses, &parse_status);
+        if (!parse_status.ok()) {
+          completion(nil, util::MakeNSError(parse_status));
+        } else {
+          completion(docs, nil);
+        }
+      };
 
   WithToken(
       [this, message, on_success, on_error](absl::string_view token) {
@@ -227,32 +227,27 @@ void Datastore::LookupDocuments(
       on_error);
 }
 
-void Datastore::WithToken(const OnToken& on_token, const OnError& on_error) {
-  credentials_->GetToken(
-      [this, on_token, on_error](util::StatusOr<Token> maybe_token) {
-        worker_queue_->EnqueueRelaxed([this, maybe_token, on_token, on_error] {
-          if (!maybe_token.ok()) {
-            on_error(maybe_token.status());
-          }
+void Datastore::WithToken(const OnToken &on_token, const OnError &on_error) {
+  // Auth may outlive Firestore
+  std::weak_ptr<Datastore> weak_this{shared_from_this()};
 
-          Token token = maybe_token.ValueOrDie();
-          on_token(token.user().is_authenticated() ? token.token()
-                                                   : absl::string_view{});
-        });
-      });
-}
+  credentials_->GetToken([this, weak_this, on_token,
+                          on_error](util::StatusOr<Token> maybe_token) {
+    worker_queue_->EnqueueRelaxed([weak_this, maybe_token, on_token, on_error] {
+      auto strong_this = weak_this.lock();
+      if (!strong_this) {
+        return;
+      }
 
-Status Datastore::ConvertStatus(grpc::Status from) {
-  if (from.ok()) {
-    return Status::OK();
-  }
+      if (!maybe_token.ok()) {
+        on_error(maybe_token.status());
+      }
 
-  grpc::StatusCode error_code = from.error_code();
-  HARD_ASSERT(
-      error_code >= grpc::CANCELLED && error_code <= grpc::UNAUTHENTICATED,
-      "Unknown gRPC error code: %s", error_code);
-
-  return {static_cast<FirestoreErrorCode>(error_code), from.error_message()};
+      Token token = maybe_token.ValueOrDie();
+      on_token(token.user().is_authenticated() ? token.token()
+                                               : absl::string_view{});
+    });
+  });
 }
 
 std::string Datastore::GetWhitelistedHeadersAsString(
