@@ -44,8 +44,8 @@
 #import <Foundation/Foundation.h>
 #import "Firestore/Source/Core/FSTTypes.h"
 #import "Firestore/Source/Model/FSTMutation.h"
-#import "Firestore/Source/Remote/FSTStream.h"
 #import "Firestore/Source/Remote/FSTSerializerBeta.h"
+#import "Firestore/Source/Remote/FSTStream.h"
 
 namespace firebase {
 namespace firestore {
@@ -55,8 +55,9 @@ namespace remote {
  * `Datastore` represents a proxy for the remote server, hiding details of the
  * RPC layer. It:
  *
- *   - Manages connections to the server - Authenticates to the server - Manages
- *   threading and keeps higher-level code running on the worker queue
+ *   - Manages connections to the server
+ *   - Authenticates to the server
+ *   - Manages threading and keeps higher-level code running on the worker queue
  *   - Serializes internal model objects to and from protocol buffers
  *
  * `Datastore` is generally not responsible for understanding the higher-level
@@ -76,8 +77,16 @@ class Datastore : public std::enable_shared_from_this<Datastore> {
    */
   void Shutdown();
 
+  /**
+   * Creates a new `WatchStream` that is still unstarted but uses a common
+   * shared channel.
+   */
   std::shared_ptr<WatchStream> CreateWatchStream(
       id<FSTWatchStreamDelegate> delegate);
+  /**
+   * Creates a new `WriteStream` that is still unstarted but uses a common
+   * shared channel
+   */
   std::shared_ptr<WriteStream> CreateWriteStream(
       id<FSTWriteStreamDelegate> delegate);
 
@@ -103,7 +112,6 @@ class Datastore : public std::enable_shared_from_this<Datastore> {
 
   static GrpcStream::MetadataT ExtractWhitelistedHeaders(
       const GrpcStream::MetadataT& headers);
-  void LogHeaders(absl::string_view headers, absl::string_view rpc);
 
   util::AsyncQueue* worker_queue_ = nullptr;
   auth::CredentialsProvider* credentials_ = nullptr;

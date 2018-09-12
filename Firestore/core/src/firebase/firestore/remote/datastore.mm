@@ -125,6 +125,9 @@ void Datastore::PollGrpcQueue() {
   bool ok = false;
   while (grpc_queue_.Next(&tag, &ok)) {
     auto completion = static_cast<GrpcCompletion *>(tag);
+    // While it's valid in principle, we never deliberately pass a null pointer
+    // to gRPC completion queue and expect it back. This might be relaxed if
+    // necessary.
     HARD_ASSERT(tag, "gRPC queue returned a null tag");
     completion->Complete(ok);
   }
@@ -149,7 +152,7 @@ void Datastore::CommitMutations(NSArray<FSTMutation *> *mutations,
   grpc::ByteBuffer message = serializer_bridge_.ToByteBuffer(
       serializer_bridge_.CreateCommitRequest(mutations));
 
-  auto on_error = [completion](const util::Status &status) {
+  auto on_error = [completion](const Status &status) {
     completion(util::MakeNSError(status));
   };
 
@@ -167,7 +170,7 @@ void Datastore::CommitMutations(NSArray<FSTMutation *> *mutations,
 
         call->Start(
             [this, on_success, on_error, call](const grpc::ByteBuffer &response,
-                                               const util::Status &status) {
+                                               const Status &status) {
               LogGrpcCallFinished("CommitRequest", call, status);
               if (status.code() == FirestoreErrorCode::Unauthenticated) {
                 credentials_->InvalidateToken();
@@ -191,7 +194,7 @@ void Datastore::LookupDocuments(
   grpc::ByteBuffer message = serializer_bridge_.ToByteBuffer(
       serializer_bridge_.CreateLookupRequest(keys));
 
-  auto on_error = [completion](const util::Status &status) {
+  auto on_error = [completion](const Status &status) {
     completion(nil, util::MakeNSError(status));
   };
 
@@ -215,7 +218,7 @@ void Datastore::LookupDocuments(
         GrpcStreamingReader *reader = lookup_calls_.back().get();
 
         reader->Start([this, on_success, on_error, reader](
-                          const util::Status &status,
+                          const Status &status,
                           const std::vector<grpc::ByteBuffer> &responses) {
           LogGrpcCallFinished("BatchGetDocuments", reader, status);
           if (status.code() == FirestoreErrorCode::Unauthenticated) {
@@ -239,7 +242,7 @@ void Datastore::WithToken(const OnToken &on_token, const OnError &on_error) {
   std::weak_ptr<Datastore> weak_this{shared_from_this()};
 
   credentials_->GetToken([this, weak_this, on_token,
-                          on_error](util::StatusOr<Token> maybe_token) {
+                          on_error](StatusOr<Token> maybe_token) {
     worker_queue_->EnqueueRelaxed([weak_this, maybe_token, on_token, on_error] {
       auto strong_this = weak_this.lock();
       if (!strong_this) {
