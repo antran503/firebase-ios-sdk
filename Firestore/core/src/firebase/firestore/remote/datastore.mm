@@ -162,7 +162,7 @@ void Datastore::CommitMutations(NSArray<FSTMutation *> *mutations,
       };
 
   WithToken(
-      [this, message, on_success, on_error](absl::string_view token) {
+      [this, message, on_success, on_error](const Token& token) {
         commit_calls_.push_back(grpc_connection_.CreateUnaryCall(
             "/google.firestore.v1beta1.Firestore/Commit", token,
             std::move(message)));
@@ -211,7 +211,7 @@ void Datastore::LookupDocuments(
       };
 
   WithToken(
-      [this, message, on_success, on_error](absl::string_view token) {
+      [this, message, on_success, on_error](const Token& token) {
         lookup_calls_.push_back(grpc_connection_.CreateStreamingReader(
             "/google.firestore.v1beta1.Firestore/BatchGetDocuments", token,
             std::move(message)));
@@ -253,9 +253,7 @@ void Datastore::WithToken(const OnToken &on_token, const OnError &on_error) {
         on_error(maybe_token.status());
       }
 
-      Token token = maybe_token.ValueOrDie();
-      on_token(token.user().is_authenticated() ? token.token()
-                                               : absl::string_view{});
+      on_token(maybe_token.ValueOrDie());
     });
   });
 }

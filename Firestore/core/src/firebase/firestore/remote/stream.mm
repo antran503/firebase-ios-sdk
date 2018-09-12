@@ -133,12 +133,7 @@ void Stream::ResumeStartWithCredentials(const StatusOr<Token>& maybe_token) {
     return;
   }
 
-  Token credential = maybe_token.ValueOrDie();
-  absl::string_view token = credential.user().is_authenticated()
-                                ? credential.token()
-                                : absl::string_view{};
-
-  grpc_stream_ = CreateGrpcStream(grpc_connection_, token);
+  grpc_stream_ = CreateGrpcStream(grpc_connection_, maybe_token.ValueOrDie());
   grpc_stream_->Start();
 }
 

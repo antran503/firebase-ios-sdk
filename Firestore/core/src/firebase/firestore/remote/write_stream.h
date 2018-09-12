@@ -94,7 +94,7 @@ class WriteStream : public Stream {
 
  private:
   std::unique_ptr<GrpcStream> CreateGrpcStream(
-      GrpcConnection* grpc_connection, const absl::string_view token) override;
+      GrpcConnection* grpc_connection, const auth::Token& token) override;
   void TearDown(GrpcStream* call) override;
 
   void NotifyStreamOpen() override;

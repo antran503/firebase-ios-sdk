@@ -72,7 +72,7 @@ class WatchStream : public Stream {
 
  private:
   std::unique_ptr<GrpcStream> CreateGrpcStream(
-      GrpcConnection* grpc_connection, absl::string_view token) override;
+      GrpcConnection* grpc_connection, const auth::Token& token) override;
   void TearDown(GrpcStream* grpc_stream) override;
 
   void NotifyStreamOpen() override;

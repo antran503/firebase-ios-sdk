@@ -106,7 +106,7 @@ class Datastore : public std::enable_shared_from_this<Datastore> {
  private:
   void PollGrpcQueue();
 
-  using OnToken = std::function<void(absl::string_view)>;
+  using OnToken = std::function<void(const auth::Token&)>;
   using OnError = std::function<void(const util::Status&)>;
   void WithToken(const OnToken& on_token, const OnError& on_error);
 

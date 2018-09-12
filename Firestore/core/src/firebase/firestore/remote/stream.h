@@ -200,7 +200,7 @@ class Stream : public GrpcStreamObserver,
   // The interface for the derived classes.
 
   virtual std::unique_ptr<GrpcStream> CreateGrpcStream(
-      GrpcConnection* grpc_connection, absl::string_view token) = 0;
+      GrpcConnection* grpc_connection, const auth::Token& token) = 0;
   virtual void TearDown(GrpcStream* stream) = 0;
   virtual void NotifyStreamOpen() = 0;
   virtual util::Status NotifyStreamResponse(

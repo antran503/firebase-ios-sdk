@@ -27,6 +27,7 @@ namespace firestore {
 namespace remote {
 
 using auth::CredentialsProvider;
+using auth::Token;
 using util::AsyncQueue;
 using util::TimerId;
 using util::Status;
@@ -76,9 +77,9 @@ void WriteStream::WriteMutations(NSArray<FSTMutation*>* mutations) {
 }
 
 std::unique_ptr<GrpcStream> WriteStream::CreateGrpcStream(
-    GrpcConnection* grpc_connection, absl::string_view token) {
+    GrpcConnection* grpc_connection, const Token& token) {
   return grpc_connection->CreateStream(
-      token, "/google.firestore.v1beta1.Firestore/Write", this);
+      "/google.firestore.v1beta1.Firestore/Write", token, this);
 }
 
 void WriteStream::TearDown(GrpcStream* grpc_stream) {
