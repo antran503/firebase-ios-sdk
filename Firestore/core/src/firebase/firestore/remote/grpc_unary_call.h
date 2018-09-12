@@ -32,6 +32,10 @@ namespace firebase {
 namespace firestore {
 namespace remote {
 
+/**
+ * Sends a single request to the server and invokes the given callback with the
+ * server response.
+ */
 class GrpcUnaryCall {
  public:
   using MetadataT = std::multimap<grpc::string_ref, grpc::string_ref>;

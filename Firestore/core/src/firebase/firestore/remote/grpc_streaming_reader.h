@@ -33,6 +33,10 @@ namespace firebase {
 namespace firestore {
 namespace remote {
 
+/**
+ * Sends a single request to the server, reads one or more streaming server
+ * responses, and invokes the given callback with the accumulated responses.
+ */
 class GrpcStreamingReader {
  public:
   using MetadataT = std::multimap<grpc::string_ref, grpc::string_ref>;
@@ -66,7 +70,6 @@ class GrpcStreamingReader {
    *
    * If this function succeeds in cancelling the call, the callback will not be
    * invoked.
-   */
    */
   void Cancel();
 
