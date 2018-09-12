@@ -134,6 +134,11 @@ class WriteStreamSerializer {
   NSData* last_stream_token_;
 };
 
+/**
+ * A C++ bridge to `FSTSerializerBeta` that allows creating
+ * `GCFSCommitRequest`s and `GCFSBatchGetDocumentsRequest`s and handling
+ * `GCFSBatchGetDocumentsResponse`s.
+ */
 class DatastoreSerializer {
  public:
   explicit DatastoreSerializer(FSTSerializerBeta* serializer)
@@ -142,15 +147,20 @@ class DatastoreSerializer {
 
   GCFSCommitRequest* CreateCommitRequest(
       NSArray<FSTMutation*>* mutations) const;
+  static grpc::ByteBuffer ToByteBuffer(GCFSCommitRequest* request);
+
   GCFSBatchGetDocumentsRequest* CreateLookupRequest(
       const std::vector<model::DocumentKey>& keys) const;
+  static grpc::ByteBuffer ToByteBuffer(GCFSBatchGetDocumentsRequest* request);
+
+  /**
+   * Merges results of the streaming read together. The array is sorted by the
+   * document key.
+   */
   NSArray<FSTMaybeDocument*>* MergeLookupResponses(
       const std::vector<grpc::ByteBuffer>& responses,
       util::Status* out_status) const;
   FSTMaybeDocument* ToMaybeDocument(GCFSBatchGetDocumentsResponse*) const;
-
-  grpc::ByteBuffer ToByteBuffer(GCFSCommitRequest* request) const;
-  grpc::ByteBuffer ToByteBuffer(GCFSBatchGetDocumentsRequest* request) const;
 
   FSTSerializerBeta* GetSerializer() { return serializer_; }
 

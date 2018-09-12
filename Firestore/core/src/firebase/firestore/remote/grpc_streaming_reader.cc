@@ -20,7 +20,6 @@
 #include <future>  // NOLINT(build/c++11)
 #include <utility>
 
-#include "Firestore/core/src/firebase/firestore/remote/convert_status.h"
 #include "Firestore/core/src/firebase/firestore/util/hard_assert.h"
 
 namespace firebase {
@@ -28,6 +27,7 @@ namespace firestore {
 namespace remote {
 
 using util::AsyncQueue;
+using util::Status;
 
 GrpcStreamingReader::GrpcStreamingReader(
     std::unique_ptr<grpc::ClientContext> context,
@@ -99,7 +99,7 @@ void GrpcStreamingReader::FastFinishCompletion() {
 void GrpcStreamingReader::OnOperationFailed() {
   SetCompletion([this](const GrpcCompletion* completion) {
     HARD_ASSERT(callback_, "GrpcStreamingReader finished without a callback ");
-    callback_(ConvertStatus(*completion->status()), responses_);
+    callback_(Status::FromGrpcStatus(*completion->status()), responses_);
   });
   call_->Finish(completion_->status(), completion_);
 }

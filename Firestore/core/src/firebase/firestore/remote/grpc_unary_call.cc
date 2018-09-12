@@ -18,13 +18,12 @@
 
 #include <utility>
 
-#include "Firestore/core/src/firebase/firestore/remote/convert_status.h"
-
 namespace firebase {
 namespace firestore {
 namespace remote {
 
 using util::AsyncQueue;
+using util::Status;
 
 GrpcUnaryCall::GrpcUnaryCall(
     std::unique_ptr<grpc::ClientContext> context,
@@ -50,7 +49,7 @@ void GrpcUnaryCall::Start(CallbackT callback) {
       worker_queue_, [this](bool, const GrpcCompletion* completion) {
         // Ignoring ok; presumably, status is a strict superset.
         finish_completion_ = nullptr;
-        callback_(*completion->message(), ConvertStatus(*completion->status()));
+        callback_(*completion->message(), Status::FromGrpcStatus(*completion->status()));
         // This `GrpcUnaryCall`'s lifetime might have been ended by the
         // callback.
       });

@@ -85,7 +85,7 @@ class Datastore : public std::enable_shared_from_this<Datastore> {
       id<FSTWatchStreamDelegate> delegate);
   /**
    * Creates a new `WriteStream` that is still unstarted but uses a common
-   * shared channel
+   * shared channel.
    */
   std::shared_ptr<WriteStream> CreateWriteStream(
       id<FSTWriteStreamDelegate> delegate);
@@ -109,6 +109,8 @@ class Datastore : public std::enable_shared_from_this<Datastore> {
   using OnToken = std::function<void(const auth::Token&)>;
   using OnError = std::function<void(const util::Status&)>;
   void WithToken(const OnToken& on_token, const OnError& on_error);
+
+  void HandleCallStatus(const util::Status& status);
 
   static GrpcStream::MetadataT ExtractWhitelistedHeaders(
       const GrpcStream::MetadataT& headers);

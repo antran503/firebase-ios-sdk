@@ -235,7 +235,7 @@ GCFSCommitRequest* DatastoreSerializer::CreateCommitRequest(
 }
 
 grpc::ByteBuffer DatastoreSerializer::ToByteBuffer(
-    GCFSCommitRequest* request) const {
+    GCFSCommitRequest* request) {
   return ConvertToByteBuffer([request data]);
 }
 
@@ -253,7 +253,7 @@ GCFSBatchGetDocumentsRequest* DatastoreSerializer::CreateLookupRequest(
 }
 
 grpc::ByteBuffer DatastoreSerializer::ToByteBuffer(
-    GCFSBatchGetDocumentsRequest* request) const {
+    GCFSBatchGetDocumentsRequest* request) {
   return ConvertToByteBuffer([request data]);
 }
 
@@ -272,6 +272,7 @@ NSArray<FSTMaybeDocument*>* DatastoreSerializer::MergeLookupResponses(
   }
   NSMutableArray<FSTMaybeDocument*>* docs =
       [NSMutableArray arrayWithCapacity:results.size()];
+  // Sort by key.
   for (const auto& kv : results) {
     [docs addObject:kv.second];
   }
