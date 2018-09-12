@@ -50,6 +50,7 @@ class GrpcUnaryCall {
   MetadataT GetResponseHeaders() const;
 
  private:
+  // See comments in `GrpcStream` on lifetime issues for gRPC objects.
   std::unique_ptr<grpc::ClientContext> context_;
   std::unique_ptr<grpc::GenericClientAsyncResponseReader> call_;
   grpc::ByteBuffer message_;
