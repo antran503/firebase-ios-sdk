@@ -29,11 +29,11 @@ GrpcUnaryCall::GrpcUnaryCall(
     std::unique_ptr<grpc::ClientContext> context,
     std::unique_ptr<grpc::GenericClientAsyncResponseReader> call,
     AsyncQueue* worker_queue,
-    const grpc::ByteBuffer& message)
+    const grpc::ByteBuffer& request)
     : context_{std::move(context)},
       call_{std::move(call)},
       worker_queue_{worker_queue},
-      message_{message} {
+      request_{request} {
 }
 
 GrpcUnaryCall::~GrpcUnaryCall() {
@@ -49,7 +49,7 @@ void GrpcUnaryCall::Start(CallbackT callback) {
       worker_queue_, [this](bool, const GrpcCompletion* completion) {
         // Ignoring ok; presumably, status is a strict superset.
         finish_completion_ = nullptr;
-        callback_(*completion->message(), Status::FromGrpcStatus(*completion->status()));
+        callback_( Status::FromGrpcStatus(*completion->status()), *completion->message());
         // This `GrpcUnaryCall`'s lifetime might have been ended by the
         // callback.
       });
@@ -65,8 +65,12 @@ void GrpcUnaryCall::Cancel() {
   }
 
   context_->TryCancel();
+  FastFinishCompletion();
+}
+
+void GrpcUnaryCall::FastFinishCompletion() {
   finish_completion_->Cancel();
-  // This is blocking.
+  // This function blocks.
   finish_completion_->WaitUntilOffQueue();
   finish_completion_ = nullptr;
 }

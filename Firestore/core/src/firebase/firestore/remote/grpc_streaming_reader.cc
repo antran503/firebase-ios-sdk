@@ -58,8 +58,7 @@ void GrpcStreamingReader::WriteRequest() {
   SetCompletion([this](const GrpcCompletion*) { Read(); });
   *completion_->message() = std::move(request_);
 
-  grpc::WriteOptions options;
-  call_->WriteLast(*completion_->message(), options.set_last_message(),
+  call_->WriteLast(*completion_->message(), grpc::WriteOptions{},
                    completion_);
 }
 

@@ -35,25 +35,37 @@ namespace remote {
 class GrpcUnaryCall {
  public:
   using MetadataT = std::multimap<grpc::string_ref, grpc::string_ref>;
+  /**
+   * The first argument is status of the call; the second argument is the server
+   * response.
+   */
   using CallbackT =
-      std::function<void(const grpc::ByteBuffer&, const util::Status&)>;
+      std::function<void( const util::Status&, const grpc::ByteBuffer&)>;
 
   GrpcUnaryCall(std::unique_ptr<grpc::ClientContext> context,
                 std::unique_ptr<grpc::GenericClientAsyncResponseReader> call,
                 util::AsyncQueue* worker_queue,
-                const grpc::ByteBuffer& message);
+                const grpc::ByteBuffer& request);
   ~GrpcUnaryCall();
 
   void Start(CallbackT callback);
+  /**
+   * Returns the metadata received from the server.
+   *
+   * Can only be called once the call has finished.
+   */
   void Cancel();
 
   MetadataT GetResponseHeaders() const;
 
  private:
+  void FastFinishCompletion();
+
   // See comments in `GrpcStream` on lifetime issues for gRPC objects.
   std::unique_ptr<grpc::ClientContext> context_;
   std::unique_ptr<grpc::GenericClientAsyncResponseReader> call_;
-  grpc::ByteBuffer message_;
+  // Stored to avoid lifetime issues with gRPC.
+  grpc::ByteBuffer request_;
 
   util::AsyncQueue* worker_queue_ = nullptr;
 

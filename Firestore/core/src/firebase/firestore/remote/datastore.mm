@@ -169,8 +169,7 @@ void Datastore::CommitMutations(NSArray<FSTMutation *> *mutations,
         GrpcUnaryCall *call = commit_calls_.back().get();
 
         call->Start(
-            [this, on_success, on_error, call](const grpc::ByteBuffer &response,
-                                               const Status &status) {
+            [this, on_success, on_error, call](const Status &status, const grpc::ByteBuffer &response) {
               LogGrpcCallFinished("CommitRequest", call, status);
               HandleCallStatus(status);
 

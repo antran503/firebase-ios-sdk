@@ -36,14 +36,18 @@ namespace remote {
 class GrpcStreamingReader {
  public:
   using MetadataT = std::multimap<grpc::string_ref, grpc::string_ref>;
+  /**
+   * The first argument is status of the call; the second argument is a vector
+   * of accumulated server responses.
+   */
   using CallbackT = std::function<void(const util::Status&,
                                        const std::vector<grpc::ByteBuffer>&)>;
 
   GrpcStreamingReader(
       std::unique_ptr<grpc::ClientContext> context,
       std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call,
-      util::AsyncQueue* firestore_queue,
-      const grpc::ByteBuffer& message);
+      util::AsyncQueue* worker_queue,
+      const grpc::ByteBuffer& request);
   ~GrpcStreamingReader();
 
   void Start(CallbackT callback);
@@ -53,7 +57,7 @@ class GrpcStreamingReader {
   /**
    * Returns the metadata received from the server.
    *
-   * Can only be called once the stream has opened.
+   * Can only be called once the call has finished.
    */
   MetadataT GetResponseHeaders() const;
 
