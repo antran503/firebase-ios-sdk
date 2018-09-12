@@ -48,14 +48,30 @@ class GrpcUnaryCall {
                 const grpc::ByteBuffer& request);
   ~GrpcUnaryCall();
 
-  void Start(CallbackT callback);
   /**
-   * Returns the metadata received from the server.
+   * Starts the call; the given `callback` will be invoked with the result of
+   * the call. If the call fails, the `callback` will be invoked with a non-ok
+   * status.
+   */
+  void Start(CallbackT&& callback);
+
+  /**
+   * If the call is in progress, attempts to cancel the call; otherwise, it's
+   * a no-op. Cancellation is done on best-effort basis; however:
+   * - the call is guaranteed to be finished when this function returns;
+   * - this function is blocking but should finish very fast (order of
+   *   milliseconds).
    *
-   * Can only be called once the call has finished.
+   * If this function succeeds in cancelling the call, the callback will not be
+   * invoked.
    */
   void Cancel();
 
+  /**
+   * Returns the metadata received from the server.
+   *
+   * Can only be called once the `GrpcUnaryCall` has finished.
+   */
   MetadataT GetResponseHeaders() const;
 
  private:

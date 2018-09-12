@@ -41,13 +41,14 @@ GrpcStreamingReader::GrpcStreamingReader(
 }
 
 GrpcStreamingReader::~GrpcStreamingReader() {
-  HARD_ASSERT(!completion_,
+  HARD_ASSERT(!current_completion_,
               "GrpcStreamingReader is being destroyed without proper shutdown");
 }
 
-void GrpcStreamingReader::Start(CallbackT callback) {
-  callback_ = callback;
+void GrpcStreamingReader::Start(CallbackT&& callback) {
+  callback_ = std::move(callback);
 
+  // Coalesce the sending of initial metadata with the first write.
   context_->set_initial_metadata_corked(true);
   call_->StartCall(nullptr);
 
@@ -55,11 +56,13 @@ void GrpcStreamingReader::Start(CallbackT callback) {
 }
 
 void GrpcStreamingReader::WriteRequest() {
-  SetCompletion([this](const GrpcCompletion*) { Read(); });
-  *completion_->message() = std::move(request_);
+  SetCompletion([this](const GrpcCompletion* /*ignored*/) { Read(); });
+  *current_completion_->message() = std::move(request_);
 
-  call_->WriteLast(*completion_->message(), grpc::WriteOptions{},
-                   completion_);
+  // It is important to indicate to the server that there will be no follow-up
+  // writes; otherwise, the call will never finish.
+  call_->WriteLast(*current_completion_->message(), grpc::WriteOptions{},
+                   current_completion_);
 }
 
 void GrpcStreamingReader::Read() {
@@ -69,11 +72,11 @@ void GrpcStreamingReader::Read() {
     Read();
   });
 
-  call_->Read(completion_->message(), completion_);
+  call_->Read(current_completion_->message(), current_completion_);
 }
 
 void GrpcStreamingReader::Cancel() {
-  if (!completion_) {
+  if (!current_completion_) {
     // Nothing to cancel.
     return;
   }
@@ -84,30 +87,32 @@ void GrpcStreamingReader::Cancel() {
   SetCompletion([this](const GrpcCompletion*) {
     // Deliberately ignored
   });
-  call_->Finish(completion_->status(), completion_);
+  call_->Finish(current_completion_->status(), current_completion_);
   FastFinishCompletion();
 }
 
 void GrpcStreamingReader::FastFinishCompletion() {
-  completion_->Cancel();
+  current_completion_->Cancel();
   // This function blocks.
-  completion_->WaitUntilOffQueue();
-  completion_ = nullptr;
+  current_completion_->WaitUntilOffQueue();
+  current_completion_ = nullptr;
 }
 
 void GrpcStreamingReader::OnOperationFailed() {
+  // The next read attempt after the server has sent the last response will also
+  // fail; in other words, `OnOperationFailed` will always be invoked, even when
+  // `Finish` will produce a successful status.
   SetCompletion([this](const GrpcCompletion* completion) {
-    HARD_ASSERT(callback_, "GrpcStreamingReader finished without a callback ");
     callback_(Status::FromGrpcStatus(*completion->status()), responses_);
   });
-  call_->Finish(completion_->status(), completion_);
+  call_->Finish(current_completion_->status(), current_completion_);
 }
 
 void GrpcStreamingReader::SetCompletion(const OnSuccess& on_success) {
   // Can't move into lambda until C++14.
   GrpcCompletion::Callback decorated =
       [this, on_success](bool ok, const GrpcCompletion* completion) {
-        completion_ = nullptr;
+        current_completion_ = nullptr;
 
         if (ok) {
           on_success(completion);
@@ -116,9 +121,9 @@ void GrpcStreamingReader::SetCompletion(const OnSuccess& on_success) {
         }
       };
 
-  HARD_ASSERT(!completion_,
+  HARD_ASSERT(!current_completion_,
               "Creating a new completion before the previous one is done");
-  completion_ = new GrpcCompletion{worker_queue_, std::move(decorated)};
+  current_completion_ = new GrpcCompletion{worker_queue_, std::move(decorated)};
 }
 
 GrpcStreamingReader::MetadataT GrpcStreamingReader::GetResponseHeaders() const {

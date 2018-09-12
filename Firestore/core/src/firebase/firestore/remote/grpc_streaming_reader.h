@@ -50,14 +50,30 @@ class GrpcStreamingReader {
       const grpc::ByteBuffer& request);
   ~GrpcStreamingReader();
 
-  void Start(CallbackT callback);
+  /**
+   * Starts the call; the given `callback` will be invoked with the accumulated
+   * results of the call. If the call fails, the `callback` will be invoked with
+   * a non-ok status.
+   */
+  void Start(CallbackT&& callback);
 
+  /**
+   * If the call is in progress, attempts to cancel the call; otherwise, it's
+   * a no-op. Cancellation is done on best-effort basis; however:
+   * - the call is guaranteed to be finished when this function returns;
+   * - this function is blocking but should finish very fast (order of
+   *   milliseconds).
+   *
+   * If this function succeeds in cancelling the call, the callback will not be
+   * invoked.
+   */
+   */
   void Cancel();
 
   /**
    * Returns the metadata received from the server.
    *
-   * Can only be called once the call has finished.
+   * Can only be called once the `GrpcStreamingReader` has finished.
    */
   MetadataT GetResponseHeaders() const;
 
@@ -71,6 +87,7 @@ class GrpcStreamingReader {
   void SetCompletion(const OnSuccess& callback);
   void FastFinishCompletion();
 
+  // See comments in `GrpcStream` on lifetime issues for gRPC objects.
   std::unique_ptr<grpc::ClientContext> context_;
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call_;
 
@@ -78,7 +95,7 @@ class GrpcStreamingReader {
 
   // There is never more than a single pending completion; the full chain is:
   // write -> read -> [read...] -> finish
-  GrpcCompletion* completion_ = nullptr;
+  GrpcCompletion* current_completion_ = nullptr;
 
   CallbackT callback_;
   grpc::ByteBuffer request_;

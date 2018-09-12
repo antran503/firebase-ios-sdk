@@ -41,15 +41,17 @@ GrpcUnaryCall::~GrpcUnaryCall() {
               "GrpcUnaryCall is being destroyed without proper shutdown");
 }
 
-void GrpcUnaryCall::Start(CallbackT callback) {
-  callback_ = callback;
+void GrpcUnaryCall::Start(CallbackT&& callback) {
+  callback_ = std::move(callback);
   call_->StartCall();
 
   finish_completion_ = new GrpcCompletion(
-      worker_queue_, [this](bool, const GrpcCompletion* completion) {
-        // Ignoring ok; presumably, status is a strict superset.
+      worker_queue_,
+      [this](bool /*ignored_ok*/, const GrpcCompletion* completion) {
+        // Ignoring ok, status should contain all the relevant information.
         finish_completion_ = nullptr;
-        callback_( Status::FromGrpcStatus(*completion->status()), *completion->message());
+        callback_(Status::FromGrpcStatus(*completion->status()),
+                  *completion->message());
         // This `GrpcUnaryCall`'s lifetime might have been ended by the
         // callback.
       });
