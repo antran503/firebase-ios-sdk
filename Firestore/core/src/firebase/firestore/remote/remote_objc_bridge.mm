@@ -234,8 +234,7 @@ GCFSCommitRequest* DatastoreSerializer::CreateCommitRequest(
   return request;
 }
 
-grpc::ByteBuffer DatastoreSerializer::ToByteBuffer(
-    GCFSCommitRequest* request) {
+grpc::ByteBuffer DatastoreSerializer::ToByteBuffer(GCFSCommitRequest* request) {
   return ConvertToByteBuffer([request data]);
 }
 
@@ -266,8 +265,7 @@ NSArray<FSTMaybeDocument*>* DatastoreSerializer::MergeLookupResponses(
     if (!out_status->ok()) {
       return nil;
     }
-    FSTMaybeDocument* doc =
-        [serializer_ decodedMaybeDocumentFromBatch:proto];
+    FSTMaybeDocument* doc = [serializer_ decodedMaybeDocumentFromBatch:proto];
     results[doc.key] = doc;
   }
   NSMutableArray<FSTMaybeDocument*>* docs =

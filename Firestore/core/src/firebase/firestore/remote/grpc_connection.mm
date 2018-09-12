@@ -63,7 +63,7 @@ GrpcConnection::GrpcConnection(const DatabaseInfo &database_info,
 }
 
 std::unique_ptr<grpc::ClientContext> GrpcConnection::CreateContext(
-    const Token& credential) const {
+    const Token &credential) const {
   absl::string_view token = credential.user().is_authenticated()
                                 ? credential.token()
                                 : absl::string_view{};
@@ -125,7 +125,7 @@ std::shared_ptr<grpc::Channel> GrpcConnection::CreateChannel() const {
 
 std::unique_ptr<GrpcStream> GrpcConnection::CreateStream(
     absl::string_view rpc_name,
-    const Token& token,
+    const Token &token,
     GrpcStreamObserver *observer) {
   LOG_DEBUG("Creating gRPC stream");
 
@@ -140,7 +140,7 @@ std::unique_ptr<GrpcStream> GrpcConnection::CreateStream(
 
 std::unique_ptr<GrpcUnaryCall> GrpcConnection::CreateUnaryCall(
     absl::string_view rpc_name,
-    const Token& token,
+    const Token &token,
     const grpc::ByteBuffer &message) {
   LOG_DEBUG("Creating gRPC unary call");
 
@@ -148,14 +148,14 @@ std::unique_ptr<GrpcUnaryCall> GrpcConnection::CreateUnaryCall(
 
   auto context = CreateContext(token);
   auto call = grpc_stub_->PrepareUnaryCall(context.get(), MakeString(rpc_name),
-                                          message, grpc_queue_);
+                                           message, grpc_queue_);
   return absl::make_unique<GrpcUnaryCall>(std::move(context), std::move(call),
                                           worker_queue_, message);
 }
 
 std::unique_ptr<GrpcStreamingReader> GrpcConnection::CreateStreamingReader(
     absl::string_view rpc_name,
-    const Token& token,
+    const Token &token,
     const grpc::ByteBuffer &message) {
   LOG_DEBUG("Creating gRPC streaming reader");
 

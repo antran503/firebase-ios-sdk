@@ -76,7 +76,8 @@ class GrpcConnection {
  private:
   static std::string test_certificate_path_;
 
-  std::unique_ptr<grpc::ClientContext> CreateContext(const auth::Token& credential) const;
+  std::unique_ptr<grpc::ClientContext> CreateContext(
+      const auth::Token& credential) const;
   std::shared_ptr<grpc::Channel> CreateChannel() const;
   void EnsureActiveStub();
 

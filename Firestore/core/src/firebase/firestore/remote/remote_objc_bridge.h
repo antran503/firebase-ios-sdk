@@ -162,7 +162,9 @@ class DatastoreSerializer {
       util::Status* out_status) const;
   FSTMaybeDocument* ToMaybeDocument(GCFSBatchGetDocumentsResponse*) const;
 
-  FSTSerializerBeta* GetSerializer() { return serializer_; }
+  FSTSerializerBeta* GetSerializer() {
+    return serializer_;
+  }
 
  private:
   FSTSerializerBeta* serializer_;

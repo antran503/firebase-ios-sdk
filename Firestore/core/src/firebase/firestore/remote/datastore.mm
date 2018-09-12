@@ -169,7 +169,8 @@ void Datastore::CommitMutations(NSArray<FSTMutation *> *mutations,
         GrpcUnaryCall *call = commit_calls_.back().get();
 
         call->Start(
-            [this, on_success, on_error, call](const Status &status, const grpc::ByteBuffer &response) {
+            [this, on_success, on_error, call](
+                const Status &status, const grpc::ByteBuffer &response) {
               LogGrpcCallFinished("CommitRequest", call, status);
               HandleCallStatus(status);
 
@@ -215,8 +216,8 @@ void Datastore::LookupDocuments(
         GrpcStreamingReader *call = lookup_calls_.back().get();
 
         call->Start([this, on_success, on_error, call](
-                          const Status &status,
-                          const std::vector<grpc::ByteBuffer> &responses) {
+                        const Status &status,
+                        const std::vector<grpc::ByteBuffer> &responses) {
           LogGrpcCallFinished("BatchGetDocuments", call, status);
           HandleCallStatus(status);
 

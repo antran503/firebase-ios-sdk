@@ -106,7 +106,7 @@ class TestStream : public Stream {
  public:
   TestStream(GrpcStreamTester* tester,
              CredentialsProvider* credentials_provider)
-      : Stream{&tester->async_queue(), credentials_provider,
+      : Stream{&tester->worker_queue(), credentials_provider,
                /*Datastore=*/nullptr, TimerId::ListenStreamConnectionBackoff,
                kIdleTimerId},
         tester_{tester} {
@@ -125,8 +125,8 @@ class TestStream : public Stream {
   }
 
  private:
-  std::unique_ptr<GrpcStream> CreateGrpcStream(
-      Datastore* datastore, absl::string_view token) override {
+  std::unique_ptr<GrpcStream> CreateGrpcStream(GrpcConnection*,
+                                               const Token&) override {
     return tester_->CreateStream(this);
   }
   void TearDown(GrpcStream* stream) override {
@@ -200,7 +200,7 @@ class StreamTest : public testing::Test {
   }
 
   AsyncQueue& async_queue() {
-    return tester_.async_queue();
+    return tester_.worker_queue();
   }
 
  private:
