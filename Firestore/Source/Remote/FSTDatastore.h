@@ -19,8 +19,6 @@
 #include <memory>
 #include <vector>
 
-#import "Firestore/Source/Core/FSTTypes.h"
-
 #include "Firestore/core/src/firebase/firestore//remote/watch_stream.h"
 #include "Firestore/core/src/firebase/firestore//remote/write_stream.h"
 #include "Firestore/core/src/firebase/firestore/auth/credentials_provider.h"
@@ -30,6 +28,8 @@
 #include "Firestore/core/src/firebase/firestore/remote/datastore.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
+
+#import "Firestore/Source/Remote/FSTStream.h"
 
 @class FSTDispatchQueue;
 @class FSTMutation;
@@ -90,10 +90,10 @@ NS_ASSUME_NONNULL_BEGIN
              completion:(FSTVoidErrorBlock)completion;
 
 /** Creates a new watch stream. */
-- (std::shared_ptr<firebase::firestore::remote::WatchStream>)createWatchStreamWithDelegate:(id)delegate;
+- (std::shared_ptr<firebase::firestore::remote::WatchStream>)createWatchStreamWithDelegate:(id<FSTWatchStreamDelegate>)delegate;
 
 /** Creates a new write stream. */
-- (std::shared_ptr<firebase::firestore::remote::WriteStream>)createWriteStreamWithDelegate:(id)delegate;
+- (std::shared_ptr<firebase::firestore::remote::WriteStream>)createWriteStreamWithDelegate:(id<FSTWriteStreamDelegate>)delegate;
 
 /** The name of the database and the backend. */
 // Does not own this DatabaseInfo.

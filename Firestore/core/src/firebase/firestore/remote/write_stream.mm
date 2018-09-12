@@ -34,9 +34,9 @@ using util::Status;
 WriteStream::WriteStream(AsyncQueue* async_queue,
                          CredentialsProvider* credentials_provider,
                          FSTSerializerBeta* serializer,
-                         Datastore* datastore,
+                         GrpcConnection* grpc_connection,
                          id<FSTWriteStreamDelegate> delegate)
-    : Stream{async_queue, credentials_provider, datastore,
+    : Stream{async_queue, credentials_provider, grpc_connection,
              TimerId::WriteStreamConnectionBackoff, TimerId::WriteStreamIdle},
       serializer_bridge_{serializer},
       delegate_bridge_{delegate} {
@@ -76,9 +76,8 @@ void WriteStream::WriteMutations(NSArray<FSTMutation*>* mutations) {
 }
 
 std::unique_ptr<GrpcStream> WriteStream::CreateGrpcStream(
-    Datastore* datastore, absl::string_view token) {
-  // TODO(varconst): use `GrpcConnection` instead of `Datastore`.
-  return datastore->CreateGrpcStream(
+    GrpcConnection* grpc_connection, absl::string_view token) {
+  return grpc_connection->CreateStream(
       token, "/google.firestore.v1beta1.Firestore/Write", this);
 }
 

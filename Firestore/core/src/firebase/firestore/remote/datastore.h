@@ -29,10 +29,11 @@
 #include "Firestore/core/src/firebase/firestore/core/database_info.h"
 #include "Firestore/core/src/firebase/firestore/model/document_key.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_connection.h"
-#include "Firestore/core/src/firebase/firestore/remote/grpc_stream.h"
-#include "Firestore/core/src/firebase/firestore/remote/grpc_stream_observer.h"
+#include "Firestore/core/src/firebase/firestore/remote/grpc_streaming_reader.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_unary_call.h"
 #include "Firestore/core/src/firebase/firestore/remote/remote_objc_bridge.h"
+#include "Firestore/core/src/firebase/firestore/remote/watch_stream.h"
+#include "Firestore/core/src/firebase/firestore/remote/write_stream.h"
 #include "Firestore/core/src/firebase/firestore/util/async_queue.h"
 #include "Firestore/core/src/firebase/firestore/util/executor.h"
 #include "Firestore/core/src/firebase/firestore/util/status.h"
@@ -43,12 +44,25 @@
 #import <Foundation/Foundation.h>
 #import "Firestore/Source/Core/FSTTypes.h"
 #import "Firestore/Source/Model/FSTMutation.h"
+#import "Firestore/Source/Remote/FSTStream.h"
 #import "Firestore/Source/Remote/FSTSerializerBeta.h"
 
 namespace firebase {
 namespace firestore {
 namespace remote {
 
+/**
+ * `Datastore` represents a proxy for the remote server, hiding details of the
+ * RPC layer. It:
+ *
+ *   - Manages connections to the server - Authenticates to the server - Manages
+ *   threading and keeps higher-level code running on the worker queue
+ *   - Serializes internal model objects to and from protocol buffers
+ *
+ * `Datastore` is generally not responsible for understanding the higher-level
+ * protocol involved in actually making changes or reading data, and aside from
+ * the connections it manages is otherwise stateless.
+ */
 class Datastore : public std::enable_shared_from_this<Datastore> {
  public:
   Datastore(const core::DatabaseInfo& database_info,
@@ -56,11 +70,16 @@ class Datastore : public std::enable_shared_from_this<Datastore> {
             auth::CredentialsProvider* credentials,
             FSTSerializerBeta* serializer);
 
+  /**
+   * Gracefully cancels any pending gRPC calls and drains the gRPC completion
+   * queue.
+   */
   void Shutdown();
 
-  std::unique_ptr<GrpcStream> CreateGrpcStream(absl::string_view rpc_name,
-                                               absl::string_view token,
-                                               GrpcStreamObserver* observer);
+  std::shared_ptr<WatchStream> CreateWatchStream(
+      id<FSTWatchStreamDelegate> delegate);
+  std::shared_ptr<WriteStream> CreateWriteStream(
+      id<FSTWriteStreamDelegate> delegate);
 
   void CommitMutations(NSArray<FSTMutation*>* mutations,
                        FSTVoidErrorBlock completion);

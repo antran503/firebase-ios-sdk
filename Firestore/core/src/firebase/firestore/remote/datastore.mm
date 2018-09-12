@@ -130,11 +130,18 @@ void Datastore::PollGrpcQueue() {
   }
 }
 
-std::unique_ptr<GrpcStream> Datastore::CreateGrpcStream(
-    absl::string_view rpc_name,
-    absl::string_view token,
-    GrpcStreamObserver *observer) {
-  return grpc_connection_.CreateStream(token, rpc_name, observer);
+std::shared_ptr<WatchStream> Datastore::CreateWatchStream(
+    id<FSTWatchStreamDelegate> delegate) {
+  return std::make_shared<WatchStream>(worker_queue_, credentials_,
+                                       serializer_bridge_.GetSerializer(),
+                                       &grpc_connection_, delegate);
+}
+
+std::shared_ptr<WriteStream> Datastore::CreateWriteStream(
+    id<FSTWriteStreamDelegate> delegate) {
+  return std::make_shared<WriteStream>(worker_queue_, credentials_,
+                                       serializer_bridge_.GetSerializer(),
+                                       &grpc_connection_, delegate);
 }
 
 void Datastore::CommitMutations(NSArray<FSTMutation *> *mutations,

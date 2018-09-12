@@ -34,9 +34,9 @@ using util::Status;
 WatchStream::WatchStream(AsyncQueue* async_queue,
                          CredentialsProvider* credentials_provider,
                          FSTSerializerBeta* serializer,
-                         Datastore* datastore,
+                         GrpcConnection* grpc_connection,
                          id<FSTWatchStreamDelegate> delegate)
-    : Stream{async_queue, credentials_provider, datastore,
+    : Stream{async_queue, credentials_provider, grpc_connection,
              TimerId::ListenStreamConnectionBackoff, TimerId::ListenStreamIdle},
       serializer_bridge_{serializer},
       delegate_bridge_{delegate} {
@@ -62,8 +62,8 @@ void WatchStream::UnwatchTargetId(TargetId target_id) {
 }
 
 std::unique_ptr<GrpcStream> WatchStream::CreateGrpcStream(
-    Datastore* datastore, absl::string_view token) {
-  return datastore->CreateGrpcStream(
+    GrpcConnection* grpc_connection, absl::string_view token) {
+  return grpc_connection->CreateStream(
       token, "/google.firestore.v1beta1.Firestore/Listen", this);
 }
 

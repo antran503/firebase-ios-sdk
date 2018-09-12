@@ -152,6 +152,8 @@ class DatastoreSerializer {
   grpc::ByteBuffer ToByteBuffer(GCFSCommitRequest* request) const;
   grpc::ByteBuffer ToByteBuffer(GCFSBatchGetDocumentsRequest* request) const;
 
+  FSTSerializerBeta* GetSerializer() { return serializer_; }
+
  private:
   FSTSerializerBeta* serializer_;
 };

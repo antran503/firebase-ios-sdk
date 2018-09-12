@@ -179,14 +179,12 @@ using firebase::firestore::remote::WriteStream;
   _datastore->LookupDocuments(keys, completion);
 }
 
-- (std::shared_ptr<WatchStream>)createWatchStreamWithDelegate:(id)delegate {
-  return std::make_shared<WatchStream>([_workerDispatchQueue implementation], _credentials,
-                                       _serializer, _datastore.get(), delegate);
+- (std::shared_ptr<WatchStream>)createWatchStreamWithDelegate:(id<FSTWatchStreamDelegate>)delegate {
+  return _datastore->CreateWatchStream(delegate);
 }
 
-- (std::shared_ptr<WriteStream>)createWriteStreamWithDelegate:(id)delegate {
-  return std::make_shared<WriteStream>([_workerDispatchQueue implementation], _credentials,
-                                       _serializer, _datastore.get(), delegate);
+- (std::shared_ptr<WriteStream>)createWriteStreamWithDelegate:(id<FSTWriteStreamDelegate>)delegate {
+  return _datastore->CreateWriteStream(delegate);
 }
 
 @end
