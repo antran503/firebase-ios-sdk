@@ -71,10 +71,7 @@ class Datastore : public std::enable_shared_from_this<Datastore> {
             auth::CredentialsProvider* credentials,
             FSTSerializerBeta* serializer);
 
-  /**
-   * Gracefully cancels any pending gRPC calls and drains the gRPC completion
-   * queue.
-   */
+  /** Cancels any pending gRPC calls and drains the gRPC completion queue. */
   void Shutdown();
 
   /**

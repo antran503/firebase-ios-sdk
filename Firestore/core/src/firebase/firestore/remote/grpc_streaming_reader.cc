@@ -104,6 +104,8 @@ void GrpcStreamingReader::OnOperationFailed() {
   // `Finish` will produce a successful status.
   SetCompletion([this](const GrpcCompletion* completion) {
     callback_(Status::FromGrpcStatus(*completion->status()), responses_);
+    // This `GrpcStreamingReader`'s lifetime might have been ended by the
+    // callback.
   });
   call_->Finish(current_completion_->status(), current_completion_);
 }
