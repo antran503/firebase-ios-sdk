@@ -91,7 +91,7 @@ class Datastore : public std::enable_shared_from_this<Datastore> {
 
   // A separate executor dedicated to polling gRPC completion queue (which is
   // shared for all spawned gRPC streams and calls).
-  std::unique_ptr<util::internal::Executor> dedicated_executor_;
+  std::unique_ptr<util::internal::Executor> rpc_executor_;
   grpc::CompletionQueue grpc_queue_;
   GrpcConnection grpc_connection_;
 
