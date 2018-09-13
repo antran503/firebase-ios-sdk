@@ -16,6 +16,7 @@
 
 #include <initializer_list>
 #include <memory>
+#include <vector>
 
 #include "Firestore/core/src/firebase/firestore/remote/grpc_unary_call.h"
 #include "Firestore/core/src/firebase/firestore/util/async_queue.h"
@@ -35,21 +36,24 @@ using util::Status;
 using util::CompletionResult::Error;
 using util::CompletionResult::Ok;
 
-class GrpcUnaryCallTest : public testing::Test {
+class GrpcStreamingReaderTest : public testing::Test {
  public:
-  GrpcUnaryCallTest() : call_{tester_.CreateUnaryCall()} {
-    call_->Start([this](const Status& status, const grpc::ByteBuffer&) {
+  GrpcStreamingReaderTest() : reader_{tester_.CreateStreamingReader()} {
+    reader_->Start([this](const Status& status,
+                          const std::vector<grpc::ByteBuffer>& responses) {
       status_ = status;
+      responses_ = responses;
     });
   }
 
-  ~GrpcUnaryCallTest() {
+  ~GrpcStreamingReaderTest() {
     tester_.Shutdown();
   }
 
-  GrpcUnaryCall& call() {
-    return *call_;
+  GrpcStreamingReader& reader() {
+    return *reader_;
   }
+
   AsyncQueue& worker_queue() {
     return tester_.worker_queue();
   }
@@ -64,37 +68,57 @@ class GrpcUnaryCallTest : public testing::Test {
   const absl::optional<Status>& status() const {
     return status_;
   }
+  const std::vector<grpc::ByteBuffer>& responses() const {
+    return responses_;
+  }
 
  private:
   GrpcStreamTester tester_;
-  std::unique_ptr<GrpcUnaryCall> call_;
+  std::unique_ptr<GrpcStreamingReader> reader_;
   absl::optional<Status> status_;
+  std::vector<grpc::ByteBuffer> responses_;
 };
 
-TEST_F(GrpcUnaryCallTest, CanCancel) {
+TEST_F(GrpcStreamingReaderTest, OneSuccessfulRead) {
+  ForceFinish({/*Write*/ Ok, /*Read*/ Ok, /*Read after last*/ Error});
+  EXPECT_FALSE(status().has_value());
+
+  ForceFinish({/*Finish*/ Ok});
+  EXPECT_TRUE(status().has_value());
+  EXPECT_EQ(responses().size(), 1);
+}
+
+TEST_F(GrpcStreamingReaderTest, TwoSuccessfulReads) {
+  ForceFinish(
+      {/*Write*/ Ok, /*Read*/ Ok, /*Read*/ Ok, /*Read after last*/ Error});
+  EXPECT_FALSE(status().has_value());
+
+  ForceFinish({/*Finish*/ Ok});
+  EXPECT_TRUE(status().has_value());
+  EXPECT_EQ(responses().size(), 2);
+}
+
+TEST_F(GrpcStreamingReaderTest, ErrorOnWrite) {
+  ForceFinish({/*Write*/ Error});
+  EXPECT_FALSE(status().has_value());
+
+  ForceFinish({/*Finish*/ Ok});
+  EXPECT_TRUE(status().has_value());
+  EXPECT_TRUE(responses().empty());
+}
+
+TEST_F(GrpcStreamingReaderTest, CanCancel) {
   KeepPollingGrpcQueue();
-  worker_queue().EnqueueBlocking([&] {
-    call().Cancel();
-  });
+  worker_queue().EnqueueBlocking([&] { reader().Cancel(); });
   EXPECT_FALSE(status().has_value());
 }
 
-TEST_F(GrpcUnaryCallTest, CanCancelTwice) {
+TEST_F(GrpcStreamingReaderTest, CanCancelTwice) {
   KeepPollingGrpcQueue();
   worker_queue().EnqueueBlocking([&] {
-    call().Cancel();
-    EXPECT_NO_THROW(call().Cancel());
+    reader().Cancel();
+    EXPECT_NO_THROW(reader().Cancel());
   });
-}
-
-TEST_F(GrpcUnaryCallTest, SuccessfulFinish) {
-  ForceFinish({/*Finish*/ Ok});
-  EXPECT_TRUE(status().has_value());
-}
-
-TEST_F(GrpcUnaryCallTest, Error) {
-  ForceFinish({/*Finish*/ Error});
-  EXPECT_TRUE(status().has_value());
 }
 
 }  // namespace remote

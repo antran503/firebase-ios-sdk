@@ -19,18 +19,11 @@
 #include <initializer_list>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
-#include "Firestore/core/src/firebase/firestore/remote/grpc_completion.h"
 #include "Firestore/core/src/firebase/firestore/util/async_queue.h"
-#include "Firestore/core/src/firebase/firestore/util/executor_std.h"
 #include "Firestore/core/test/firebase/firestore/util/grpc_stream_tester.h"
 #include "absl/memory/memory.h"
-#include "grpcpp/client_context.h"
-#include "grpcpp/completion_queue.h"
-#include "grpcpp/create_channel.h"
-#include "grpcpp/generic/generic_stub.h"
 #include "grpcpp/support/byte_buffer.h"
 #include "gtest/gtest.h"
 
@@ -43,7 +36,6 @@ using util::CompletionResult;
 using util::GrpcStreamTester;
 using util::CompletionResult::Error;
 using util::CompletionResult::Ok;
-using util::internal::ExecutorStd;
 
 namespace {
 
