@@ -111,6 +111,7 @@ TEST_F(GrpcStreamingReaderTest, CanCancel) {
   KeepPollingGrpcQueue();
   worker_queue().EnqueueBlocking([&] { reader().Cancel(); });
   EXPECT_FALSE(status().has_value());
+  EXPECT_TRUE(responses().empty());
 }
 
 TEST_F(GrpcStreamingReaderTest, CanCancelTwice) {
