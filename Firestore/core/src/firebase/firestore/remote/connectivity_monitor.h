@@ -18,39 +18,59 @@
 #define FIRESTORE_CORE_SRC_FIREBASE_FIRESTORE_REMOTE_CONNECTIVITY_MONITOR_H_
 
 #include <functional>
+#include <memory>
 #include <utility>
 #include <vector>
+
+#include "Firestore/core/src/firebase/firestore/util/async_queue.h"
+#include "absl/types/optional.h"
 
 namespace firebase {
 namespace firestore {
 namespace remote {
 
 class ConnectivityMonitor {
-  public:
-    enum class NetworkStatus {
-      Unreachable,
-      ReachableWifi,
-      ReachableCellular,
-    };
+ public:
+  enum class NetworkStatus {
+    Unreachable,
+    ReachableViaWifi,
+    ReachableViaCellular,
+  };
 
-    using ObserverT = std::function<void(NetworkStatus)>;
+  using CallbackT = std::function<void(NetworkStatus)>;
 
-    ConnectivityMonitor();
-    ~ConnectivityMonitor();
+  static std::unique_ptr<ConnectivityMonitor> Create(
+      util::AsyncQueue* worker_queue);
 
-    void AddObserver(ObserverT&& observer) {
-      observers_.push_back(std::move(observer));
-    }
+  explicit ConnectivityMonitor(util::AsyncQueue* worker_queue)
+      : worker_queue_{worker_queue} {
+  }
 
-  private:
-    void NotifyObservers(NetworkStatus status) {
-      for (auto& observer : observers_) {
-        observer(status);
+  virtual ~ConnectivityMonitor() {
+  }
+
+  void AddCallback(CallbackT&& callback) {
+    callbacks_.push_back(std::move(callback));
+  }
+
+ protected:
+  void MaybeInvokeCallbacks(NetworkStatus new_status) {
+    worker_queue_->Enqueue([this, new_status] {
+      if (new_status == status_) {
+        return;
       }
-    }
+      status_ = new_status;
 
-    std::vector<ObserverT> observers_;
-    NetworkStatus status_{};
+      for (auto& callback : callbacks_) {
+        callback(status_.value());
+      }
+    });
+  }
+
+ private:
+  util::AsyncQueue* worker_queue_ = nullptr;
+  std::vector<CallbackT> callbacks_;
+  absl::optional<NetworkStatus> status_{};
 };
 
 }  // namespace remote

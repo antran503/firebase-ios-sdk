@@ -16,57 +16,98 @@
 
 #include "Firestore/core/src/firebase/firestore/remote/connectivity_monitor.h"
 
+#import <Foundation/Foundation.h>
+#import <SystemConfiguration/SystemConfiguration.h>
+#import <netinet/in.h>
+
+#include "Firestore/core/src/firebase/firestore/util/hard_assert.h"
+#include "absl/memory/memory.h"
+#include "dispatch/dispatch.h"
+
 namespace firebase {
 namespace firestore {
 namespace remote {
 
-NetworkStatus ???(SCNetworkReachabilityFlags flags) {
-  GRPCConnectivityStatus result = GRPCConnectivityUnknown;
-  if (((flags & kSCNetworkReachabilityFlagsReachable) == 0) ||
-      ((flags & kSCNetworkReachabilityFlagsConnectionRequired) != 0)) {
-    return GRPCConnectivityNoNetwork;
+namespace {
+
+using NetworkStatus = ConnectivityMonitor::NetworkStatus;
+using util::AsyncQueue;
+
+NetworkStatus ToNetworkStatus(SCNetworkReachabilityFlags flags) {
+  if (!(flags & kSCNetworkReachabilityFlagsReachable)) {
+    return NetworkStatus::Unreachable;
   }
-  result = GRPCConnectivityWiFi;
+  if (flags & kSCNetworkReachabilityFlagsConnectionRequired) {
+    return NetworkStatus::Unreachable;
+  }
+
 #if TARGET_OS_IPHONE
   if (flags & kSCNetworkReachabilityFlagsIsWWAN) {
-    return result = GRPCConnectivityCellular;
+    return NetworkStatus::ReachableViaCellular;
   }
 #endif
-  return result;
+  return NetworkStatus::ReachableViaWifi;
 }
 
-static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReachabilityFlags flags,
-                                 void *info) {
-  GRPCConnectivityStatus newStatus = CalculateConnectivityStatus(flags);
-
-  if (newStatus != currentStatus) {
-    [[NSNotificationCenter defaultCenter] postNotificationName:kGRPCConnectivityNotification
-                                                        object:nil];
-    currentStatus = newStatus;
-  }
+SCNetworkReachabilityRef CreateReachability() {
+  sockaddr_in any_connection_addr{};
+  any_connection_addr.sin_len = sizeof(any_connection_addr);
+  any_connection_addr.sin_family = AF_INET;
+  return SCNetworkReachabilityCreateWithAddress(
+      nullptr, reinterpret_cast<sockaddr*>(&any_connection_addr));
 }
 
-ConnectivityMonitor::ConnectivityMonitor() {
-    struct sockaddr_in addr = {0};
-    addr.sin_len = sizeof(addr);
-    addr.sin_family = AF_INET;
-    reachability = SCNetworkReachabilityCreateWithAddress(NULL, (struct sockaddr *)&addr);
+}  // namespace
 
-    SCNetworkConnectionFlags flags;
-    if (SCNetworkReachabilityGetFlags(reachability, &flags)) {
-      currentStatus = CalculateConnectivityStatus(flags);
+class ConnectivityMonitorApple : public ConnectivityMonitor {
+ public:
+  ConnectivityMonitorApple(AsyncQueue* worker_queue)
+      : ConnectivityMonitor{worker_queue}, reachability_{CreateReachability()} {
+    auto on_reachability_changed = [](SCNetworkReachabilityRef /*unused*/,
+                                      SCNetworkReachabilityFlags flags,
+                                      void* raw_this) {
+      HARD_ASSERT(raw_this, "Received a null pointer as context");
+      static_cast<ConnectivityMonitorApple*>(raw_this)->OnChange(flags);
+    };
+
+    SCNetworkReachabilityContext context{};
+    context.info = this;
+
+    bool success = SCNetworkReachabilitySetCallback(
+        reachability_, on_reachability_changed, &context);
+    if (!success) {
+      // TODO: log
+      return;
     }
 
-    SCNetworkReachabilityContext context = {0, (__bridge void *)(self), NULL, NULL, NULL};
-    if (!SCNetworkReachabilitySetCallback(reachability, ReachabilityCallback, &context) ||
-        !SCNetworkReachabilityScheduleWithRunLoop(reachability, CFRunLoopGetMain(),
-                                                  kCFRunLoopCommonModes)) {
-      NSLog(@"gRPC connectivity monitor fail to set");
+    auto queue =
+        dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0);
+    success = SCNetworkReachabilitySetDispatchQueue(reachability_, queue);
+    if (!success) {
+      // TODO: log
+      return;
     }
   }
-}
 
-ConnectivityMonitor::~ConnectivityMonitor() {
+  ~ConnectivityMonitorApple() {
+    bool success =
+        SCNetworkReachabilitySetCallback(reachability_, nullptr, nullptr);
+    // TODO: log
+    success = SCNetworkReachabilitySetDispatchQueue(reachability_, nullptr);
+    // TODO: log
+  }
+
+ private:
+  void OnChange(SCNetworkReachabilityFlags flags) {
+    MaybeInvokeCallbacks(ToNetworkStatus(flags));
+  }
+
+  SCNetworkReachabilityRef reachability_;
+};
+
+std::unique_ptr<ConnectivityMonitor> ConnectivityMonitor::Create(
+    AsyncQueue* worker_queue) {
+  return absl::make_unique<ConnectivityMonitorApple>(worker_queue);
 }
 
 }  // namespace remote
