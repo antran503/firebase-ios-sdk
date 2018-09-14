@@ -17,15 +17,22 @@
 #ifndef FIRESTORE_CORE_SRC_FIREBASE_FIRESTORE_REMOTE_CONNECTIVITY_MONITOR_H_
 #define FIRESTORE_CORE_SRC_FIREBASE_FIRESTORE_REMOTE_CONNECTIVITY_MONITOR_H_
 
+#include <functional>
+#include <vector>
+
 namespace firebase {
 namespace firestore {
 namespace remote {
 
 class ConnectivityMonitor {
   public:
+    enum class {
+      Reachable,
+      Unreachable
+    };
 
   private:
-    std::vector<std::function<void()>> callbacks_;
+    std::vector<std::function<void()>> on_;
 };
 
 }  // namespace remote
