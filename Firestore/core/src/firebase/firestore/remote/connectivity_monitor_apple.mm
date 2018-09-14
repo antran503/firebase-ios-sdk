@@ -20,6 +20,55 @@ namespace firebase {
 namespace firestore {
 namespace remote {
 
+NetworkStatus ???(SCNetworkReachabilityFlags flags) {
+  GRPCConnectivityStatus result = GRPCConnectivityUnknown;
+  if (((flags & kSCNetworkReachabilityFlagsReachable) == 0) ||
+      ((flags & kSCNetworkReachabilityFlagsConnectionRequired) != 0)) {
+    return GRPCConnectivityNoNetwork;
+  }
+  result = GRPCConnectivityWiFi;
+#if TARGET_OS_IPHONE
+  if (flags & kSCNetworkReachabilityFlagsIsWWAN) {
+    return result = GRPCConnectivityCellular;
+  }
+#endif
+  return result;
+}
+
+static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReachabilityFlags flags,
+                                 void *info) {
+  GRPCConnectivityStatus newStatus = CalculateConnectivityStatus(flags);
+
+  if (newStatus != currentStatus) {
+    [[NSNotificationCenter defaultCenter] postNotificationName:kGRPCConnectivityNotification
+                                                        object:nil];
+    currentStatus = newStatus;
+  }
+}
+
+ConnectivityMonitor::ConnectivityMonitor() {
+    struct sockaddr_in addr = {0};
+    addr.sin_len = sizeof(addr);
+    addr.sin_family = AF_INET;
+    reachability = SCNetworkReachabilityCreateWithAddress(NULL, (struct sockaddr *)&addr);
+
+    SCNetworkConnectionFlags flags;
+    if (SCNetworkReachabilityGetFlags(reachability, &flags)) {
+      currentStatus = CalculateConnectivityStatus(flags);
+    }
+
+    SCNetworkReachabilityContext context = {0, (__bridge void *)(self), NULL, NULL, NULL};
+    if (!SCNetworkReachabilitySetCallback(reachability, ReachabilityCallback, &context) ||
+        !SCNetworkReachabilityScheduleWithRunLoop(reachability, CFRunLoopGetMain(),
+                                                  kCFRunLoopCommonModes)) {
+      NSLog(@"gRPC connectivity monitor fail to set");
+    }
+  }
+}
+
+ConnectivityMonitor::~ConnectivityMonitor() {
+}
+
 }  // namespace remote
 }  // namespace firestore
 }  // namespace firebase

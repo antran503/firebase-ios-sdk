@@ -18,6 +18,7 @@
 #define FIRESTORE_CORE_SRC_FIREBASE_FIRESTORE_REMOTE_CONNECTIVITY_MONITOR_H_
 
 #include <functional>
+#include <utility>
 #include <vector>
 
 namespace firebase {
@@ -26,13 +27,30 @@ namespace remote {
 
 class ConnectivityMonitor {
   public:
-    enum class {
-      Reachable,
-      Unreachable
+    enum class NetworkStatus {
+      Unreachable,
+      ReachableWifi,
+      ReachableCellular,
     };
 
+    using ObserverT = std::function<void(NetworkStatus)>;
+
+    ConnectivityMonitor();
+    ~ConnectivityMonitor();
+
+    void AddObserver(ObserverT&& observer) {
+      observers_.push_back(std::move(observer));
+    }
+
   private:
-    std::vector<std::function<void()>> on_;
+    void NotifyObservers(NetworkStatus status) {
+      for (auto& observer : observers_) {
+        observer(status);
+      }
+    }
+
+    std::vector<ObserverT> observers_;
+    NetworkStatus status_{};
 };
 
 }  // namespace remote
