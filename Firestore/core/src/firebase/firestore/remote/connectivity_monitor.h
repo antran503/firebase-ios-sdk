@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "Firestore/core/src/firebase/firestore/util/async_queue.h"
+#include "absl/types/optional.h"
 
 namespace firebase {
 namespace firestore {
@@ -31,7 +32,6 @@ namespace remote {
 class ConnectivityMonitor {
  public:
   enum class NetworkStatus {
-    Unknown,
     Unreachable,
     ReachableViaWifi,
     ReachableViaCellular,
@@ -54,12 +54,13 @@ class ConnectivityMonitor {
   }
 
  protected:
+  void SetInitialStatus(NetworkStatus new_status);
   void MaybeInvokeCallbacks(NetworkStatus new_status);
 
  private:
   util::AsyncQueue* worker_queue_ = nullptr;
   std::vector<CallbackT> callbacks_;
-  NetworkStatus status_{NetworkStatus::Unknown};
+  absl::optional<NetworkStatus> status_;
 };
 
 }  // namespace remote

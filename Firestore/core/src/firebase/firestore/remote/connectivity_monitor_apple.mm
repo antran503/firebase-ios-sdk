@@ -63,6 +63,11 @@ class ConnectivityMonitorApple : public ConnectivityMonitor {
  public:
   ConnectivityMonitorApple(AsyncQueue* worker_queue)
       : ConnectivityMonitor{worker_queue}, reachability_{CreateReachability()} {
+    SCNetworkReachabilityFlags flags;
+    if (SCNetworkReachabilityGetFlags(reachability_, &flags)) {
+      SetInitialStatus(ToNetworkStatus(flags));
+    }
+
     auto on_reachability_changed = [](SCNetworkReachabilityRef /*unused*/,
                                       SCNetworkReachabilityFlags flags,
                                       void* raw_this) {
