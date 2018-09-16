@@ -21,6 +21,7 @@
 #include <map>
 #include <memory>
 
+#include "Firestore/core/src/firebase/firestore/remote/grpc_call_interface.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_completion.h"
 #include "Firestore/core/src/firebase/firestore/util/async_queue.h"
 #include "Firestore/core/src/firebase/firestore/util/status.h"
@@ -32,11 +33,13 @@ namespace firebase {
 namespace firestore {
 namespace remote {
 
+class GrpcConnection;
+
 /**
  * Sends a single request to the server and invokes the given callback with the
  * server response.
  */
-class GrpcUnaryCall {
+class GrpcUnaryCall : public GrpcCallInterface {
  public:
   using MetadataT = std::multimap<grpc::string_ref, grpc::string_ref>;
   /**
@@ -49,6 +52,7 @@ class GrpcUnaryCall {
   GrpcUnaryCall(std::unique_ptr<grpc::ClientContext> context,
                 std::unique_ptr<grpc::GenericClientAsyncResponseReader> call,
                 util::AsyncQueue* worker_queue,
+                GrpcConnection* grpc_connection,
                 const grpc::ByteBuffer& request);
   ~GrpcUnaryCall();
 
@@ -69,7 +73,9 @@ class GrpcUnaryCall {
    * If this function succeeds in cancelling the call, the callback will not be
    * invoked.
    */
-  void Cancel();
+  void Cancel() override;
+
+  void Cancel(const util::Status& status) override;
 
   /**
    * Returns the metadata received from the server.
@@ -88,6 +94,7 @@ class GrpcUnaryCall {
   grpc::ByteBuffer request_;
 
   util::AsyncQueue* worker_queue_ = nullptr;
+  GrpcConnection* grpc_connection_ = nullptr;
 
   GrpcCompletion* finish_completion_ = nullptr;
   CallbackT callback_;

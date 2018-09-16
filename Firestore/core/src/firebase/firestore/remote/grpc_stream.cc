@@ -19,6 +19,8 @@
 #include <chrono>  // NOLINT(build/c++11)
 #include <future>  // NOLINT(build/c++11)
 
+#include "Firestore/core/src/firebase/firestore/remote/grpc_connection.h"
+
 namespace firebase {
 namespace firestore {
 namespace remote {
@@ -80,16 +82,19 @@ GrpcStream::GrpcStream(
     std::unique_ptr<grpc::ClientContext> context,
     std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call,
     GrpcStreamObserver* observer,
-    AsyncQueue* firestore_queue)
+    AsyncQueue* worker_queue,
+    GrpcConnection* grpc_connection)
     : context_{std::move(context)},
       call_{std::move(call)},
       observer_{observer},
-      firestore_queue_{firestore_queue} {
+      worker_queue_{worker_queue},
+      grpc_connection_{grpc_connection} {
 }
 
 GrpcStream::~GrpcStream() {
   HARD_ASSERT(completions_.empty(),
               "GrpcStream is being destroyed without proper shutdown");
+  grpc_connection_->Unregister(this);
 }
 
 void GrpcStream::Start() {
@@ -187,7 +192,7 @@ bool GrpcStream::WriteAndFinish(grpc::ByteBuffer&& message) {
       buffered_writer_.EnqueueWrite(std::move(message));
   // Only bother with the last write if there is no active write at the moment.
   if (last_write) {
-    auto* completion = new GrpcCompletion(firestore_queue_, {});
+    auto* completion = new GrpcCompletion(worker_queue_, {});
     *completion->message() = std::move(last_write).value();
     call_->Write(*completion->message(), completion);
 
@@ -291,9 +296,22 @@ GrpcCompletion* GrpcStream::NewCompletion(const OnSuccess& on_success) {
         }
       };
 
-  auto* completion = new GrpcCompletion{firestore_queue_, std::move(decorated)};
+  auto* completion = new GrpcCompletion{worker_queue_, std::move(decorated)};
   completions_.push_back(completion);
   return completion;
+}
+
+void GrpcStream::Cancel() {
+  Finish();
+}
+
+void GrpcStream::Cancel(const util::Status& status) {
+  auto observer = observer_;
+  Finish();
+
+  if (observer) {
+    observer->OnStreamError(status);
+  }
 }
 
 }  // namespace remote

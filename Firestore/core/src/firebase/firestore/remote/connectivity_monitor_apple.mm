@@ -90,6 +90,7 @@ class ConnectivityMonitorApple : public ConnectivityMonitor {
   }
 
   ~ConnectivityMonitorApple() {
+    // Unregister
     bool success =
         SCNetworkReachabilitySetCallback(reachability_, nullptr, nullptr);
     // TODO: log

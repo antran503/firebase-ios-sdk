@@ -25,6 +25,7 @@
 #include <utility>
 #include <vector>
 
+#include "Firestore/core/src/firebase/firestore/remote/grpc_call_interface.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_completion.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_stream_observer.h"
 #include "Firestore/core/src/firebase/firestore/util/async_queue.h"
@@ -79,6 +80,8 @@ class BufferedWriter {
 
 }  // namespace internal
 
+class GrpcConnection;
+
 /**
  * A gRPC bidirectional stream that notifies the given `observer` about stream
  * events.
@@ -103,14 +106,15 @@ class BufferedWriter {
  * `grpc::GenericClientAsyncReaderWriter`. See the source file for comments on
  * implementation details.
  */
-class GrpcStream {
+class GrpcStream : public GrpcCallInterface {
  public:
   using MetadataT = std::multimap<grpc::string_ref, grpc::string_ref>;
 
   GrpcStream(std::unique_ptr<grpc::ClientContext> context,
              std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call,
              GrpcStreamObserver* observer,
-             util::AsyncQueue* firestore_queue);
+             util::AsyncQueue* worker_queue,
+             GrpcConnection* grpc_connection);
   ~GrpcStream();
 
   void Start();
@@ -149,6 +153,9 @@ class GrpcStream {
    * Can only be called once the stream has opened.
    */
   MetadataT GetResponseHeaders() const;
+
+  void Cancel() override;
+  void Cancel(const util::Status& status) override;
 
  private:
   void Read();
@@ -189,7 +196,8 @@ class GrpcStream {
   std::unique_ptr<grpc::ClientContext> context_;
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call_;
 
-  util::AsyncQueue* firestore_queue_ = nullptr;
+  util::AsyncQueue* worker_queue_ = nullptr;
+  GrpcConnection* grpc_connection_ = nullptr;
 
   GrpcStreamObserver* observer_ = nullptr;
   internal::BufferedWriter buffered_writer_;

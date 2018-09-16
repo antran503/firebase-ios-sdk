@@ -21,6 +21,7 @@
 
 #include "Firestore/core/src/firebase/firestore/auth/token.h"
 #include "Firestore/core/src/firebase/firestore/core/database_info.h"
+#include "Firestore/core/src/firebase/firestore/remote/connectivity_monitor.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_stream.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_stream_observer.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_streaming_reader.h"
@@ -69,6 +70,8 @@ class GrpcConnection {
       const auth::Token& token,
       const grpc::ByteBuffer& message);
 
+  void Unregister(GrpcCallInterface* call);
+
   static void SetTestCertificatePath(const std::string& path) {
     test_certificate_path_ = path;
   }
@@ -81,12 +84,17 @@ class GrpcConnection {
   std::shared_ptr<grpc::Channel> CreateChannel() const;
   void EnsureActiveStub();
 
+  void RegisterConnectivityMonitor();
+
   const core::DatabaseInfo* database_info_ = nullptr;
   util::AsyncQueue* worker_queue_ = nullptr;
   grpc::CompletionQueue* grpc_queue_ = nullptr;
 
   std::shared_ptr<grpc::Channel> grpc_channel_;
   std::unique_ptr<grpc::GenericStub> grpc_stub_;
+
+  std::unique_ptr<ConnectivityMonitor> connectivity_monitor_;
+  std::vector<GrpcCallInterface*> active_calls_;
 };
 
 }  // namespace remote

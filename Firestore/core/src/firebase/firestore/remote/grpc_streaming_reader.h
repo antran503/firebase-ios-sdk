@@ -22,6 +22,7 @@
 #include <memory>
 #include <vector>
 
+#include "Firestore/core/src/firebase/firestore/remote/grpc_call_interface.h"
 #include "Firestore/core/src/firebase/firestore/remote/grpc_completion.h"
 #include "Firestore/core/src/firebase/firestore/util/async_queue.h"
 #include "Firestore/core/src/firebase/firestore/util/status.h"
@@ -33,11 +34,13 @@ namespace firebase {
 namespace firestore {
 namespace remote {
 
+class GrpcConnection;
+
 /**
  * Sends a single request to the server, reads one or more streaming server
  * responses, and invokes the given callback with the accumulated responses.
  */
-class GrpcStreamingReader {
+class GrpcStreamingReader : public GrpcCallInterface {
  public:
   using MetadataT = std::multimap<grpc::string_ref, grpc::string_ref>;
   /**
@@ -51,6 +54,7 @@ class GrpcStreamingReader {
       std::unique_ptr<grpc::ClientContext> context,
       std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call,
       util::AsyncQueue* worker_queue,
+      GrpcConnection* grpc_connection,
       const grpc::ByteBuffer& request);
   ~GrpcStreamingReader();
 
@@ -71,7 +75,9 @@ class GrpcStreamingReader {
    * If this function succeeds in cancelling the call, the callback will not be
    * invoked.
    */
-  void Cancel();
+  void Cancel() override;
+
+  void Cancel(const util::Status& status) override;
 
   /**
    * Returns the metadata received from the server.
@@ -95,6 +101,7 @@ class GrpcStreamingReader {
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call_;
 
   util::AsyncQueue* worker_queue_ = nullptr;
+  GrpcConnection* grpc_connection_ = nullptr;
 
   // There is never more than a single pending completion; the full chain is:
   // write -> read -> [read...] -> finish

@@ -18,6 +18,8 @@
 
 #include <utility>
 
+#include "Firestore/core/src/firebase/firestore/remote/grpc_connection.h"
+
 namespace firebase {
 namespace firestore {
 namespace remote {
@@ -29,16 +31,19 @@ GrpcUnaryCall::GrpcUnaryCall(
     std::unique_ptr<grpc::ClientContext> context,
     std::unique_ptr<grpc::GenericClientAsyncResponseReader> call,
     AsyncQueue* worker_queue,
+    GrpcConnection* grpc_connection,
     const grpc::ByteBuffer& request)
     : context_{std::move(context)},
       call_{std::move(call)},
       worker_queue_{worker_queue},
+      grpc_connection_{grpc_connection},
       request_{request} {
 }
 
 GrpcUnaryCall::~GrpcUnaryCall() {
   HARD_ASSERT(!finish_completion_,
               "GrpcUnaryCall is being destroyed without proper shutdown");
+  grpc_connection_->Unregister(this);
 }
 
 void GrpcUnaryCall::Start(CallbackT&& callback) {
@@ -68,6 +73,11 @@ void GrpcUnaryCall::Cancel() {
 
   context_->TryCancel();
   FastFinishCompletion();
+}
+
+void GrpcUnaryCall::Cancel(const util::Status& status) {
+  Cancel();
+  callback_(status, grpc::ByteBuffer{});
 }
 
 void GrpcUnaryCall::FastFinishCompletion() {

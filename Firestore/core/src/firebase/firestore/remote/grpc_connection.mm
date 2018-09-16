@@ -39,6 +39,7 @@ namespace remote {
 using auth::Token;
 using core::DatabaseInfo;
 using model::DatabaseId;
+using util::Status;
 using util::StringFormat;
 
 namespace {
@@ -59,7 +60,9 @@ GrpcConnection::GrpcConnection(const DatabaseInfo &database_info,
                                grpc::CompletionQueue *grpc_queue)
     : database_info_{&database_info},
       worker_queue_{worker_queue},
-      grpc_queue_{grpc_queue} {
+      grpc_queue_{grpc_queue},
+      connectivity_monitor_{ConnectivityMonitor::Create(worker_queue)} {
+        RegisterConnectivityMonitor();
 }
 
 std::unique_ptr<grpc::ClientContext> GrpcConnection::CreateContext(
@@ -134,8 +137,10 @@ std::unique_ptr<GrpcStream> GrpcConnection::CreateStream(
   auto context = CreateContext(token);
   auto call =
       grpc_stub_->PrepareCall(context.get(), MakeString(rpc_name), grpc_queue_);
-  return absl::make_unique<GrpcStream>(std::move(context), std::move(call),
-                                       observer, worker_queue_);
+  auto result = absl::make_unique<GrpcStream>(std::move(context), std::move(call),
+                                       observer, worker_queue_, this);
+  active_calls_.push_back(result.get());
+  return result;
 }
 
 std::unique_ptr<GrpcUnaryCall> GrpcConnection::CreateUnaryCall(
@@ -149,8 +154,10 @@ std::unique_ptr<GrpcUnaryCall> GrpcConnection::CreateUnaryCall(
   auto context = CreateContext(token);
   auto call = grpc_stub_->PrepareUnaryCall(context.get(), MakeString(rpc_name),
                                            message, grpc_queue_);
-  return absl::make_unique<GrpcUnaryCall>(std::move(context), std::move(call),
-                                          worker_queue_, message);
+  auto result = absl::make_unique<GrpcUnaryCall>(std::move(context), std::move(call),
+                                          worker_queue_, this, message);
+  active_calls_.push_back(result.get());
+  return result;
 }
 
 std::unique_ptr<GrpcStreamingReader> GrpcConnection::CreateStreamingReader(
@@ -164,8 +171,25 @@ std::unique_ptr<GrpcStreamingReader> GrpcConnection::CreateStreamingReader(
   auto context = CreateContext(token);
   auto call =
       grpc_stub_->PrepareCall(context.get(), MakeString(rpc_name), grpc_queue_);
-  return absl::make_unique<GrpcStreamingReader>(
-      std::move(context), std::move(call), worker_queue_, message);
+  auto result = absl::make_unique<GrpcStreamingReader>(
+      std::move(context), std::move(call), worker_queue_, this, message);
+  active_calls_.push_back(result.get());
+  return result;
+}
+
+void GrpcConnection::RegisterConnectivityMonitor() {
+  connectivity_monitor_->AddCallback([this] (ConnectivityMonitor::NetworkStatus /*ignored*/) {
+    for (auto call : active_calls_) {
+      // OBC: Aborted?
+      call->Cancel(Status{FirestoreErrorCode::Unavailable, "Network connectivity changed"});
+      }
+  });
+}
+
+void GrpcConnection::Unregister(GrpcCallInterface* call) {
+  auto found = std::find(active_calls_.begin(), active_calls_.end(), call);
+  HARD_ASSERT(found != active_calls_.end(), "Missing a gRPC call");
+  active_calls_.erase(found);
 }
 
 }  // namespace remote

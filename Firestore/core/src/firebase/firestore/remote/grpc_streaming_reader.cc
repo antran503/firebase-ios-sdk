@@ -20,6 +20,7 @@
 #include <future>  // NOLINT(build/c++11)
 #include <utility>
 
+#include "Firestore/core/src/firebase/firestore/remote/grpc_connection.h"
 #include "Firestore/core/src/firebase/firestore/util/hard_assert.h"
 
 namespace firebase {
@@ -33,16 +34,19 @@ GrpcStreamingReader::GrpcStreamingReader(
     std::unique_ptr<grpc::ClientContext> context,
     std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call,
     AsyncQueue* worker_queue,
+    GrpcConnection* grpc_connection,
     const grpc::ByteBuffer& request)
     : context_{std::move(context)},
       call_{std::move(call)},
       worker_queue_{worker_queue},
+      grpc_connection_{grpc_connection},
       request_{request} {
 }
 
 GrpcStreamingReader::~GrpcStreamingReader() {
   HARD_ASSERT(!current_completion_,
               "GrpcStreamingReader is being destroyed without proper shutdown");
+  grpc_connection_->Unregister(this);
 }
 
 void GrpcStreamingReader::Start(CallbackT&& callback) {
@@ -89,6 +93,11 @@ void GrpcStreamingReader::Cancel() {
   });
   call_->Finish(current_completion_->status(), current_completion_);
   FastFinishCompletion();
+}
+
+void GrpcStreamingReader::Cancel(const Status& status) {
+  Cancel();
+  callback_(status, {});
 }
 
 void GrpcStreamingReader::FastFinishCompletion() {
