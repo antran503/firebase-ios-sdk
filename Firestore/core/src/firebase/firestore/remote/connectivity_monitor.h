@@ -33,7 +33,7 @@ class ConnectivityMonitor {
  public:
   enum class NetworkStatus {
     Unreachable,
-    ReachableViaWifi,
+    Reachable,
     ReachableViaCellular,
   };
 

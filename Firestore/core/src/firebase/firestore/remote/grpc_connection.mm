@@ -57,11 +57,12 @@ std::string GrpcConnection::test_certificate_path_;
 
 GrpcConnection::GrpcConnection(const DatabaseInfo &database_info,
                                util::AsyncQueue *worker_queue,
-                               grpc::CompletionQueue *grpc_queue)
+                 grpc::CompletionQueue* grpc_queue,
+                 std::unique_ptr<ConnectivityMonitor> connectivity_monitor) {
     : database_info_{&database_info},
       worker_queue_{worker_queue},
       grpc_queue_{grpc_queue},
-      connectivity_monitor_{ConnectivityMonitor::Create(worker_queue)} {
+      connectivity_monitor_{std::move(connectivity_monitor)} {
         RegisterConnectivityMonitor();
 }
 

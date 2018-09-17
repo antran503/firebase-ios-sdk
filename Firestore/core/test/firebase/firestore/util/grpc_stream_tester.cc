@@ -76,7 +76,7 @@ std::unique_ptr<GrpcStreamingReader> GrpcStreamTester::CreateStreamingReader() {
       grpc_stub_.PrepareCall(grpc_context_owning.get(), "", &grpc_queue_);
 
   return absl::make_unique<GrpcStreamingReader>(
-      std::move(grpc_context_owning), std::move(grpc_call), &worker_queue_,
+      std::move(grpc_context_owning), std::move(grpc_call), &worker_queue_, 
       grpc::ByteBuffer{});
 }
 

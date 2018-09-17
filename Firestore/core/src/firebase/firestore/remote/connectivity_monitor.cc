@@ -25,24 +25,26 @@ namespace remote {
 
 void ConnectivityMonitor::SetInitialStatus(NetworkStatus new_status) {
   HARD_ASSERT(!status_.has_value(),
-                "SetInitialStatus should only be called once");
+              "SetInitialStatus should only be called once");
   status_ = new_status;
 }
 
 void ConnectivityMonitor::MaybeInvokeCallbacks(NetworkStatus new_status) {
-    worker_queue_->Enqueue([this, new_status] {
-      if (new_status == status_) {
-        return;
-      }
-      status_ = new_status;
-      LOG_DEBUG("OBC new status: %s", status_.value());
+  // TODO: cancellation in destructor
+  // EnqueueAfterDelay? EnqueueWithGuard? Custom mechanism?
+  worker_queue_->Enqueue([this, new_status] {
+    if (new_status == status_) {
+      return;
+    }
+    status_ = new_status;
+    LOG_DEBUG("OBC new status: %s", status_.value());
 
-      for (auto& callback : callbacks_) {
-        callback(status_.value());
-      }
-    });
+    for (auto& callback : callbacks_) {
+      callback(status_.value());
+    }
+  });
 }
 
 }  // namespace remote
-}  // namespace remote
 }  // namespace firestore
+}  // namespace firebase

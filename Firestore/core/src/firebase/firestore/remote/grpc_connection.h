@@ -48,7 +48,8 @@ class GrpcConnection {
  public:
   GrpcConnection(const core::DatabaseInfo& database_info,
                  util::AsyncQueue* worker_queue,
-                 grpc::CompletionQueue* grpc_queue);
+                 grpc::CompletionQueue* grpc_queue,
+                 std::unique_ptr<ConnectivityMonitor> connectivity_monitor);
 
   /**
    * Creates a stream to the given stream RPC endpoint. The resulting stream

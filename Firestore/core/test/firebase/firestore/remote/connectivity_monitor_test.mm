@@ -36,6 +36,16 @@ using util::internal::ExecutorStd;
 
 namespace {
 
+class NoOpObserver : public GrpcStreamObserver {
+ public:
+  void OnStreamStart() override {
+  }
+  void OnStreamRead(const grpc::ByteBuffer& message) override {
+  }
+  void OnStreamError(const util::Status& status) override {
+  }
+};
+
 std::shared_ptr<Datastore> CreateDatastore(const DatabaseInfo& database_info,
                                            AsyncQueue* async_queue,
                                            CredentialsProvider* credentials) {
@@ -104,3 +114,4 @@ TEST_F(DatastoreTest, WhitelistedHeaders) {
 }  // namespace remote
 }  // namespace firestore
 }  // namespace firebase
+

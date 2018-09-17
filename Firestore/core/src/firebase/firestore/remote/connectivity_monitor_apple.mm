@@ -21,6 +21,7 @@
 #import <netinet/in.h>
 
 #include "Firestore/core/src/firebase/firestore/util/hard_assert.h"
+#include "Firestore/core/src/firebase/firestore/util/log.h"
 #include "absl/memory/memory.h"
 #include "dispatch/dispatch.h"
 
@@ -46,7 +47,7 @@ NetworkStatus ToNetworkStatus(SCNetworkReachabilityFlags flags) {
     return NetworkStatus::ReachableViaCellular;
   }
 #endif
-  return NetworkStatus::ReachableViaWifi;
+  return NetworkStatus::Reachable;
 }
 
 SCNetworkReachabilityRef CreateReachability() {
@@ -77,11 +78,10 @@ class ConnectivityMonitorApple : public ConnectivityMonitor {
 
     SCNetworkReachabilityContext context{};
     context.info = this;
-
     bool success = SCNetworkReachabilitySetCallback(
         reachability_, on_reachability_changed, &context);
     if (!success) {
-      // TODO: log
+      LOG_DEBUG("Couldn't set reachability callback");
       return;
     }
 
@@ -89,18 +89,23 @@ class ConnectivityMonitorApple : public ConnectivityMonitor {
         dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0);
     success = SCNetworkReachabilitySetDispatchQueue(reachability_, queue);
     if (!success) {
-      // TODO: log
+      LOG_DEBUG("Couldn't set reachability queue");
       return;
     }
   }
 
   ~ConnectivityMonitorApple() {
-    // Unregister
     bool success =
         SCNetworkReachabilitySetCallback(reachability_, nullptr, nullptr);
-    // TODO: log
+    if (!success) {
+      LOG_DEBUG("Couldn't unset reachability callback");
+      return;
+    }
     success = SCNetworkReachabilitySetDispatchQueue(reachability_, nullptr);
-    // TODO: log
+    if (!success) {
+      LOG_DEBUG("Couldn't unset reachability queue");
+      return;
+    }
   }
 
  private:

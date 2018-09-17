@@ -18,6 +18,7 @@
 #define FIRESTORE_CORE_SRC_FIREBASE_FIRESTORE_REMOTE_GRPC_CALL_INTERFACE_H_
 
 #include "Firestore/core/src/firebase/firestore/util/status.h"
+
 namespace firebase {
 namespace firestore {
 namespace remote {
