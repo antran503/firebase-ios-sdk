@@ -22,6 +22,7 @@
 #include "Firestore/core/src/firebase/firestore/remote/grpc_connection.h"
 #include "Firestore/core/src/firebase/firestore/util/async_queue.h"
 #include "Firestore/core/src/firebase/firestore/util/executor_std.h"
+#include "Firestore/core/test/firebase/firestore/util/grpc_stream_tester.h"
 #include "absl/memory/memory.h"
 #include "gtest/gtest.h"
 
@@ -54,7 +55,7 @@ class MockConnectivityMonitor : public ConnectivityMonitor {
 
 bool IsConnectivityChange(const Status& status) {
   return status.code() == FirestoreErrorCode::Unavailable &&
-    status.error_message() == "Network connectivity changed" ;
+         status.error_message() == "Network connectivity changed";
 }
 
 class ConnectivityObserver : public GrpcStreamObserver {
@@ -81,76 +82,85 @@ class GrpcConnectionTest : public testing::Test {
  public:
   GrpcConnectionTest()
       : worker_queue{absl::make_unique<ExecutorStd>()},
-        database_info_{DatabaseId{"foo", "bar"}, "", "", false} {
+        database_info_{DatabaseId{"foo", "bar"}, "", "", false},
+        mock_grpc_queue{&worker_queue} {
     auto connectivity_monitor_owning =
         absl::make_unique<MockConnectivityMonitor>(&worker_queue);
     connectivity_monitor = connectivity_monitor_owning.get();
     grpc_connection = absl::make_unique<GrpcConnection>(
-        database_info_, &worker_queue, &grpc_queue_,
+        database_info_, &worker_queue, mock_grpc_queue.queue(),
         std::move(connectivity_monitor_owning));
   }
 
   void SetNetworkStatus(NetworkStatus new_status) {
     connectivity_monitor->set_status(new_status);
     // Make sure the callback executes.
-    worker_queue.EnqueueBlocking([]{});
+    worker_queue.EnqueueBlocking([] {});
   }
 
  private:
   DatabaseInfo database_info_;
-  grpc::CompletionQueue grpc_queue_;
 
  public:
   AsyncQueue worker_queue;
   MockConnectivityMonitor* connectivity_monitor = nullptr;
+  util::MockGrpcQueue mock_grpc_queue;
   std::unique_ptr<GrpcConnection> grpc_connection;
 };
 
 TEST_F(GrpcConnectionTest, GrpcStreamsNoticeChangeInConnectivity) {
   ConnectivityObserver observer;
-  // Stream can only survive one change of connectivity; subsequent calls to `Cancel` will be no-ops
-  // and won't notify the observer. For this reason, stream is recreated each time the observer is
-  // notified.
-  auto new_stream = [&] { return grpc_connection->CreateStream("", Token{"", User{}}, &observer); };
 
-  auto stream = new_stream();
+  auto stream = grpc_connection->CreateStream("", Token{"", User{}}, &observer);
+  stream->Start();
   EXPECT_EQ(observer.connectivity_change_count(), 0);
 
   SetNetworkStatus(NetworkStatus::Reachable);
   // Same status shouldn't trigger a callback.
   EXPECT_EQ(observer.connectivity_change_count(), 0);
 
+  mock_grpc_queue.KeepPolling();
   SetNetworkStatus(NetworkStatus::Unreachable);
   EXPECT_EQ(observer.connectivity_change_count(), 1);
-
-  stream = new_stream();
-  SetNetworkStatus(NetworkStatus::Unreachable);
-  // Same status shouldn't trigger a callback.
-  EXPECT_EQ(observer.connectivity_change_count(), 1);
-
-  SetNetworkStatus(NetworkStatus::Reachable);
-  EXPECT_EQ(observer.connectivity_change_count(), 2);
-
-  stream = new_stream();
-  SetNetworkStatus(NetworkStatus::ReachableViaCellular);
-  EXPECT_EQ(observer.connectivity_change_count(), 3);
 }
 
-TEST_F(GrpcConnectionTest, GrpcCallsNoticeChangeInConnectivity) {
+TEST_F(GrpcConnectionTest, GrpcUnaryCallsNoticeChangeInConnectivity) {
   int change_count = 0;
 
-  auto unary_call = grpc_connection->CreateUnaryCall("", Token{"", User{}}, grpc::ByteBuffer{});
+  auto unary_call = grpc_connection->CreateUnaryCall("", Token{"", User{}},
+                                                     grpc::ByteBuffer{});
   unary_call->Start([&](const Status& status, const grpc::ByteBuffer&) {
-      if (IsConnectivityChange(status)) {
-        ++change_count;
-      }
+    if (IsConnectivityChange(status)) {
+      ++change_count;
+    }
   });
 
   SetNetworkStatus(NetworkStatus::Reachable);
   // Same status shouldn't trigger a callback.
   EXPECT_EQ(change_count, 0);
 
+  mock_grpc_queue.KeepPolling();
   SetNetworkStatus(NetworkStatus::Unreachable);
+  EXPECT_EQ(change_count, 1);
+}
+
+TEST_F(GrpcConnectionTest, GrpcStreamingCallsNoticeChangeInConnectivity) {
+  int change_count = 0;
+  auto streaming_call = grpc_connection->CreateStreamingReader(
+      "", Token{"", User{}}, grpc::ByteBuffer{});
+  streaming_call->Start(
+      [&](const Status& status, const std::vector<grpc::ByteBuffer>&) {
+        if (IsConnectivityChange(status)) {
+          ++change_count;
+        }
+      });
+
+  SetNetworkStatus(NetworkStatus::Reachable);
+  // Same status shouldn't trigger a callback.
+  EXPECT_EQ(change_count, 0);
+
+  mock_grpc_queue.KeepPolling();
+  SetNetworkStatus(NetworkStatus::ReachableViaCellular);
   EXPECT_EQ(change_count, 1);
 }
 

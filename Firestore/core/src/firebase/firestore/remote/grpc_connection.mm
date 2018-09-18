@@ -55,15 +55,16 @@ std::string MakeString(absl::string_view view) {
 
 std::string GrpcConnection::test_certificate_path_;
 
-GrpcConnection::GrpcConnection(const DatabaseInfo &database_info,
-                               util::AsyncQueue *worker_queue,
-                 grpc::CompletionQueue* grpc_queue,
-                 std::unique_ptr<ConnectivityMonitor> connectivity_monitor)
+GrpcConnection::GrpcConnection(
+    const DatabaseInfo &database_info,
+    util::AsyncQueue *worker_queue,
+    grpc::CompletionQueue *grpc_queue,
+    std::unique_ptr<ConnectivityMonitor> connectivity_monitor)
     : database_info_{&database_info},
       worker_queue_{worker_queue},
       grpc_queue_{grpc_queue},
       connectivity_monitor_{std::move(connectivity_monitor)} {
-        RegisterConnectivityMonitor();
+  RegisterConnectivityMonitor();
 }
 
 std::unique_ptr<grpc::ClientContext> GrpcConnection::CreateContext(
@@ -138,8 +139,8 @@ std::unique_ptr<GrpcStream> GrpcConnection::CreateStream(
   auto context = CreateContext(token);
   auto call =
       grpc_stub_->PrepareCall(context.get(), MakeString(rpc_name), grpc_queue_);
-  auto result = absl::make_unique<GrpcStream>(std::move(context), std::move(call),
-                                       observer, worker_queue_, this);
+  auto result = absl::make_unique<GrpcStream>(
+      std::move(context), std::move(call), observer, worker_queue_, this);
   active_calls_.push_back(result.get());
   return result;
 }
@@ -155,8 +156,8 @@ std::unique_ptr<GrpcUnaryCall> GrpcConnection::CreateUnaryCall(
   auto context = CreateContext(token);
   auto call = grpc_stub_->PrepareUnaryCall(context.get(), MakeString(rpc_name),
                                            message, grpc_queue_);
-  auto result = absl::make_unique<GrpcUnaryCall>(std::move(context), std::move(call),
-                                          worker_queue_, this, message);
+  auto result = absl::make_unique<GrpcUnaryCall>(
+      std::move(context), std::move(call), worker_queue_, this, message);
   active_calls_.push_back(result.get());
   return result;
 }
@@ -179,15 +180,19 @@ std::unique_ptr<GrpcStreamingReader> GrpcConnection::CreateStreamingReader(
 }
 
 void GrpcConnection::RegisterConnectivityMonitor() {
-  connectivity_monitor_->AddCallback([this] (ConnectivityMonitor::NetworkStatus /*ignored*/) {
-    for (auto call : active_calls_) {
-      // OBC: Aborted?
-      call->Cancel(Status{FirestoreErrorCode::Unavailable, "Network connectivity changed"});
-      }
-  });
+  connectivity_monitor_->AddCallback(
+      [this](ConnectivityMonitor::NetworkStatus /*ignored*/) {
+        auto calls =
+            active_calls_;  // Calls may unregister themselves on cancel.
+        for (GrpcCallInterface *call : calls) {
+          // OBC: Aborted?
+          call->Cancel(Status{FirestoreErrorCode::Unavailable,
+                              "Network connectivity changed"});
+        }
+      });
 }
 
-void GrpcConnection::Unregister(GrpcCallInterface* call) {
+void GrpcConnection::Unregister(GrpcCallInterface *call) {
   auto found = std::find(active_calls_.begin(), active_calls_.end(), call);
   HARD_ASSERT(found != active_calls_.end(), "Missing a gRPC call");
   active_calls_.erase(found);

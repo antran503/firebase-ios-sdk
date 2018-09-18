@@ -73,9 +73,7 @@ class GrpcUnaryCallTest : public testing::Test {
 
 TEST_F(GrpcUnaryCallTest, CanCancel) {
   KeepPollingGrpcQueue();
-  worker_queue().EnqueueBlocking([&] {
-    call().Cancel();
-  });
+  worker_queue().EnqueueBlocking([&] { call().Cancel(); });
   EXPECT_FALSE(status().has_value());
 }
 

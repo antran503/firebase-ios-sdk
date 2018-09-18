@@ -24,11 +24,12 @@ namespace firestore {
 namespace remote {
 
 class GrpcCallInterface {
-  public:
-    virtual ~GrpcCallInterface() {}
+ public:
+  virtual ~GrpcCallInterface() {
+  }
 
-    virtual void Cancel() = 0;
-    virtual void Cancel(const util::Status& status) = 0;
+  virtual void Cancel() = 0;
+  virtual void Cancel(const util::Status& status) = 0;
 };
 
 }  // namespace remote
