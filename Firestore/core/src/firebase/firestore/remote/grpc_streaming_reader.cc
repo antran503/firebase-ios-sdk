@@ -46,7 +46,9 @@ GrpcStreamingReader::GrpcStreamingReader(
 GrpcStreamingReader::~GrpcStreamingReader() {
   HARD_ASSERT(!current_completion_,
               "GrpcStreamingReader is being destroyed without proper shutdown");
-  grpc_connection_->Unregister(this);
+  if (grpc_connection_) {
+    grpc_connection_->Unregister(this);
+  }
 }
 
 void GrpcStreamingReader::Start(CallbackT&& callback) {

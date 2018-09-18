@@ -31,6 +31,11 @@ using remote::GrpcStreamingReader;
 using remote::GrpcStreamObserver;
 using remote::GrpcUnaryCall;
 
+// class NoOpConnectivityMonitor : public ConnectivityMonitor {
+//  public:
+//    using ConnectivityMonitor::ConnectivityMonitor;
+// };
+
 GrpcStreamTester::GrpcStreamTester()
     : worker_queue_{absl::make_unique<ExecutorStd>()},
       dedicated_executor_{absl::make_unique<ExecutorStd>()},
@@ -55,7 +60,7 @@ std::unique_ptr<GrpcStream> GrpcStreamTester::CreateStream(
 
   return absl::make_unique<GrpcStream>(std::move(grpc_context_owning),
                                        std::move(grpc_call), observer,
-                                       &worker_queue_);
+                                       &worker_queue_, nullptr);
 }
 
 std::unique_ptr<GrpcUnaryCall> GrpcStreamTester::CreateUnaryCall() {
@@ -66,7 +71,7 @@ std::unique_ptr<GrpcUnaryCall> GrpcStreamTester::CreateUnaryCall() {
 
   return absl::make_unique<GrpcUnaryCall>(std::move(grpc_context_owning),
                                           std::move(grpc_call), &worker_queue_,
-                                          grpc::ByteBuffer{});
+                                          nullptr, grpc::ByteBuffer{});
 }
 
 std::unique_ptr<GrpcStreamingReader> GrpcStreamTester::CreateStreamingReader() {
@@ -76,8 +81,8 @@ std::unique_ptr<GrpcStreamingReader> GrpcStreamTester::CreateStreamingReader() {
       grpc_stub_.PrepareCall(grpc_context_owning.get(), "", &grpc_queue_);
 
   return absl::make_unique<GrpcStreamingReader>(
-      std::move(grpc_context_owning), std::move(grpc_call), &worker_queue_, 
-      grpc::ByteBuffer{});
+      std::move(grpc_context_owning), std::move(grpc_call), &worker_queue_,
+      nullptr, grpc::ByteBuffer{});
 }
 
 void GrpcStreamTester::ShutdownGrpcQueue() {

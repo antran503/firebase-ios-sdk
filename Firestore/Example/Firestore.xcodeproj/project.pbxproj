@@ -207,7 +207,6 @@
 		B6D6C6F3215182DE0083B27D /* grpc_connection_test.mm in Sources */ = {isa = PBXBuildFile; fileRef = B6D6C6F2215182DD0083B27D /* grpc_connection_test.mm */; };
 		B6F470262149CF12003B338B /* grpc_unary_call_test.cc in Sources */ = {isa = PBXBuildFile; fileRef = B6F470252149CF12003B338B /* grpc_unary_call_test.cc */; };
 		B6F47028214AE4F4003B338B /* grpc_streaming_reader_test.cc in Sources */ = {isa = PBXBuildFile; fileRef = B6F47027214AE4F4003B338B /* grpc_streaming_reader_test.cc */; };
-		B6F4702A214F254E003B338B /* connectivity_monitor_test.mm in Sources */ = {isa = PBXBuildFile; fileRef = B6F47029214F254E003B338B /* connectivity_monitor_test.mm */; };
 		B6FB467D208E9D3C00554BA2 /* async_queue_test.cc in Sources */ = {isa = PBXBuildFile; fileRef = B6FB467B208E9A8200554BA2 /* async_queue_test.cc */; };
 		B6FB4684208EA0EC00554BA2 /* async_queue_libdispatch_test.mm in Sources */ = {isa = PBXBuildFile; fileRef = B6FB4680208EA0BE00554BA2 /* async_queue_libdispatch_test.mm */; };
 		B6FB4685208EA0F000554BA2 /* async_queue_std_test.cc in Sources */ = {isa = PBXBuildFile; fileRef = B6FB4681208EA0BE00554BA2 /* async_queue_std_test.cc */; };
@@ -522,7 +521,6 @@
 		B6D6C6F2215182DD0083B27D /* grpc_connection_test.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = grpc_connection_test.mm; sourceTree = "<group>"; };
 		B6F470252149CF12003B338B /* grpc_unary_call_test.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = grpc_unary_call_test.cc; sourceTree = "<group>"; };
 		B6F47027214AE4F4003B338B /* grpc_streaming_reader_test.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = grpc_streaming_reader_test.cc; sourceTree = "<group>"; };
-		B6F47029214F254E003B338B /* connectivity_monitor_test.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = connectivity_monitor_test.mm; sourceTree = "<group>"; };
 		B6FB467A208E9A8200554BA2 /* async_queue_test.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = async_queue_test.h; sourceTree = "<group>"; };
 		B6FB467B208E9A8200554BA2 /* async_queue_test.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = async_queue_test.cc; sourceTree = "<group>"; };
 		B6FB4680208EA0BE00554BA2 /* async_queue_libdispatch_test.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = async_queue_libdispatch_test.mm; sourceTree = "<group>"; };
@@ -657,7 +655,6 @@
 			isa = PBXGroup;
 			children = (
 				B6D6C6F2215182DD0083B27D /* grpc_connection_test.mm */,
-				B6F47029214F254E003B338B /* connectivity_monitor_test.mm */,
 				B6F47027214AE4F4003B338B /* grpc_streaming_reader_test.cc */,
 				B6F470252149CF12003B338B /* grpc_unary_call_test.cc */,
 				546854A820A36867004BDBD5 /* datastore_test.mm */,
@@ -1829,7 +1826,6 @@
 				5492E054202154AB00B64F25 /* FIRFieldValueTests.mm in Sources */,
 				5467FB01203E5717009C9584 /* FIRFirestoreTests.mm in Sources */,
 				5492E052202154AB00B64F25 /* FIRGeoPointTests.mm in Sources */,
-				B6F4702A214F254E003B338B /* connectivity_monitor_test.mm in Sources */,
 				5492E059202154AB00B64F25 /* FIRQuerySnapshotTests.mm in Sources */,
 				5492E051202154AA00B64F25 /* FIRQueryTests.mm in Sources */,
 				5492E057202154AB00B64F25 /* FIRSnapshotMetadataTests.mm in Sources */,

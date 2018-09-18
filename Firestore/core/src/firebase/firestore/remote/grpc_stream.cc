@@ -94,7 +94,9 @@ GrpcStream::GrpcStream(
 GrpcStream::~GrpcStream() {
   HARD_ASSERT(completions_.empty(),
               "GrpcStream is being destroyed without proper shutdown");
-  grpc_connection_->Unregister(this);
+  if (grpc_connection_) {
+    grpc_connection_->Unregister(this);
+  }
 }
 
 void GrpcStream::Start() {

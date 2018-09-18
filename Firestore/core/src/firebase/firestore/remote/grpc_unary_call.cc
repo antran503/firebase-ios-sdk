@@ -43,7 +43,9 @@ GrpcUnaryCall::GrpcUnaryCall(
 GrpcUnaryCall::~GrpcUnaryCall() {
   HARD_ASSERT(!finish_completion_,
               "GrpcUnaryCall is being destroyed without proper shutdown");
-  grpc_connection_->Unregister(this);
+  if (grpc_connection_) {
+    grpc_connection_->Unregister(this);
+  }
 }
 
 void GrpcUnaryCall::Start(CallbackT&& callback) {
