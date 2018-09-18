@@ -204,6 +204,7 @@
 		B686F2B22025000D0028D6BE /* resource_path_test.cc in Sources */ = {isa = PBXBuildFile; fileRef = B686F2B02024FFD70028D6BE /* resource_path_test.cc */; };
 		B6BBE43121262CF400C6A53E /* grpc_stream_test.cc in Sources */ = {isa = PBXBuildFile; fileRef = B6BBE42F21262CF400C6A53E /* grpc_stream_test.cc */; };
 		B6D1B68520E2AB1B00B35856 /* exponential_backoff_test.cc in Sources */ = {isa = PBXBuildFile; fileRef = B6D1B68420E2AB1A00B35856 /* exponential_backoff_test.cc */; };
+		B6D6C6F3215182DE0083B27D /* grpc_connection_test.mm in Sources */ = {isa = PBXBuildFile; fileRef = B6D6C6F2215182DD0083B27D /* grpc_connection_test.mm */; };
 		B6F470262149CF12003B338B /* grpc_unary_call_test.cc in Sources */ = {isa = PBXBuildFile; fileRef = B6F470252149CF12003B338B /* grpc_unary_call_test.cc */; };
 		B6F47028214AE4F4003B338B /* grpc_streaming_reader_test.cc in Sources */ = {isa = PBXBuildFile; fileRef = B6F47027214AE4F4003B338B /* grpc_streaming_reader_test.cc */; };
 		B6F4702A214F254E003B338B /* connectivity_monitor_test.mm in Sources */ = {isa = PBXBuildFile; fileRef = B6F47029214F254E003B338B /* connectivity_monitor_test.mm */; };
@@ -518,6 +519,7 @@
 		B686F2B02024FFD70028D6BE /* resource_path_test.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = resource_path_test.cc; sourceTree = "<group>"; };
 		B6BBE42F21262CF400C6A53E /* grpc_stream_test.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = grpc_stream_test.cc; sourceTree = "<group>"; };
 		B6D1B68420E2AB1A00B35856 /* exponential_backoff_test.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = exponential_backoff_test.cc; sourceTree = "<group>"; };
+		B6D6C6F2215182DD0083B27D /* grpc_connection_test.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = grpc_connection_test.mm; sourceTree = "<group>"; };
 		B6F470252149CF12003B338B /* grpc_unary_call_test.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = grpc_unary_call_test.cc; sourceTree = "<group>"; };
 		B6F47027214AE4F4003B338B /* grpc_streaming_reader_test.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = grpc_streaming_reader_test.cc; sourceTree = "<group>"; };
 		B6F47029214F254E003B338B /* connectivity_monitor_test.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = connectivity_monitor_test.mm; sourceTree = "<group>"; };
@@ -654,6 +656,7 @@
 		546854A720A3681B004BDBD5 /* remote */ = {
 			isa = PBXGroup;
 			children = (
+				B6D6C6F2215182DD0083B27D /* grpc_connection_test.mm */,
 				B6F47029214F254E003B338B /* connectivity_monitor_test.mm */,
 				B6F47027214AE4F4003B338B /* grpc_streaming_reader_test.cc */,
 				B6F470252149CF12003B338B /* grpc_unary_call_test.cc */,
@@ -1878,6 +1881,7 @@
 				5492E03520213FFC00B64F25 /* FSTSpecTests.mm in Sources */,
 				5492E03320213FFC00B64F25 /* FSTSyncEngineTestDriver.mm in Sources */,
 				DE2EF0881F3D0B6E003D0CDC /* FSTTreeSortedDictionaryTests.m in Sources */,
+				B6D6C6F3215182DE0083B27D /* grpc_connection_test.mm in Sources */,
 				5492E063202154B900B64F25 /* FSTViewSnapshotTest.mm in Sources */,
 				5492E065202154B900B64F25 /* FSTViewTests.mm in Sources */,
 				5492E0C62021557E00B64F25 /* FSTWatchChange+Testing.mm in Sources */,

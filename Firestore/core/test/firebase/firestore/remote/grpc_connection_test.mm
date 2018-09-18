@@ -30,6 +30,7 @@ namespace firestore {
 namespace remote {
 
 using auth::Token;
+using auth::User;
 using core::DatabaseInfo;
 using model::DatabaseId;
 using util::AsyncQueue;
@@ -57,7 +58,10 @@ class ConnectivityObserver : public GrpcStreamObserver {
   void OnStreamRead(const grpc::ByteBuffer& message) override {
   }
   void OnStreamError(const util::Status& status) override {
-    ++connectivity_change_count;
+    if (status.code() == FirestoreErrorCode::Unavailable &&
+        status.error_message() == "Network connectivity changed") {
+      ++connectivity_change_count_;
+    }
   }
 
   int connectivity_change_count() const {
@@ -71,13 +75,14 @@ class ConnectivityObserver : public GrpcStreamObserver {
 class GrpcConnectionTest : public testing::Test {
  public:
   GrpcConnectionTest()
-      : async_queue{absl::make_unique<ExecutorStd>()},
-        database_info_{DatabaseId{"foo", "bar"}, "", "", false},
-        connectivity_monitor {
-    absl::make_unique<MockConnectivityMonitor>(&worker_queue)
-  }
-} grpc_connection {
-  database_info_, &async_queue, grpc_queue_, connectivity_monitor {
+      : worker_queue{absl::make_unique<ExecutorStd>()},
+        database_info_{DatabaseId{"foo", "bar"}, "", "", false} {
+    auto connectivity_monitor_owning =
+        absl::make_unique<MockConnectivityMonitor>(&worker_queue);
+    connectivity_monitor = connectivity_monitor_owning.get();
+    grpc_connection = absl::make_unique<GrpcConnection>(
+        database_info_, &worker_queue, &grpc_queue_,
+        std::move(connectivity_monitor_owning));
   }
 
  private:
@@ -86,30 +91,25 @@ class GrpcConnectionTest : public testing::Test {
 
  public:
   AsyncQueue worker_queue;
-  std::unique_ptr<MockConnectivityMonitor> connectivity_monitor;
-  GrpcConnection grpc_connection;
+  MockConnectivityMonitor* connectivity_monitor = nullptr;
+  std::unique_ptr<GrpcConnection> grpc_connection;
 };
 
 TEST_F(GrpcConnectionTest, GrpcCallsNoticeChangeInConnectivity) {
   ConnectivityObserver observer;
-  auto stream = grpc_connection.CreateStream("", Token{}, &observer);
+  auto stream = grpc_connection->CreateStream("", Token{"", User{}}, &observer);
   EXPECT_EQ(observer.connectivity_change_count(), 0);
 
-  worker_queue.EnqueueBlocking(
-      [&] { connectivity_monitor.set_status(NetworkStatus::Unreachable); });
+  connectivity_monitor->set_status(NetworkStatus::Unreachable);
   EXPECT_EQ(observer.connectivity_change_count(), 1);
 
-  worker_queue.EnqueueBlocking(
-      [&] { connectivity_monitor.set_status(NetworkStatus::Unreachable); });
+  connectivity_monitor->set_status(NetworkStatus::Unreachable);
   EXPECT_EQ(observer.connectivity_change_count(), 1);
 
-  worker_queue.EnqueueBlocking(
-      [&] { connectivity_monitor.set_status(NetworkStatus::Reachable); });
+  connectivity_monitor->set_status(NetworkStatus::Reachable);
   EXPECT_EQ(observer.connectivity_change_count(), 2);
 
-  worker_queue.EnqueueBlocking([&] {
-    connectivity_monitor.set_status(NetworkStatus::ReachableViaCellular);
-  });
+  connectivity_monitor->set_status(NetworkStatus::ReachableViaCellular);
   EXPECT_EQ(observer.connectivity_change_count(), 3);
 }
 
