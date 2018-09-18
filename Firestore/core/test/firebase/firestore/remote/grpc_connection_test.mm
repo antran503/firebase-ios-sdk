@@ -164,6 +164,32 @@ TEST_F(GrpcConnectionTest, GrpcStreamingCallsNoticeChangeInConnectivity) {
   EXPECT_EQ(change_count, 1);
 }
 
+TEST_F(GrpcConnectionTest, ConnectivityChangeWithSeveralActiveCalls) {
+  int changes_count = 0;
+  auto unary_call_foo = grpc_connection->CreateUnaryCall("", Token{"", User{}},
+                                                         grpc::ByteBuffer{});
+  unary_call_foo->Start([&](const Status&, const grpc::ByteBuffer&) {
+    unary_call_foo.reset();
+    ++changes_count;
+  });
+  auto unary_call_bar = grpc_connection->CreateUnaryCall("", Token{"", User{}},
+                                                         grpc::ByteBuffer{});
+  unary_call_bar->Start([&](const Status&, const grpc::ByteBuffer&) {
+    unary_call_bar.reset();
+    ++changes_count;
+  });
+  auto unary_call_baz = grpc_connection->CreateUnaryCall("", Token{"", User{}},
+                                                         grpc::ByteBuffer{});
+  unary_call_baz->Start([&](const Status&, const grpc::ByteBuffer&) {
+    unary_call_baz.reset();
+    ++changes_count;
+  });
+
+  mock_grpc_queue.KeepPolling();
+  EXPECT_NO_THROW(SetNetworkStatus(NetworkStatus::Unreachable));
+  EXPECT_EQ(changes_count, 3);
+}
+
 }  // namespace remote
 }  // namespace firestore
 }  // namespace firebase
