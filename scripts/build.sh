@@ -71,7 +71,7 @@ fi
 function RunXcodebuild() {
   echo xcodebuild "$@"
 
-  xcodebuild "$@" | xcpretty; result=$?
+  scan-build --status-bugs xcodebuild "$@" | xcpretty; result=$?
   if [[ $result == 65 ]]; then
     echo "xcodebuild exited with 65, retrying" 1>&2
     sleep 5
