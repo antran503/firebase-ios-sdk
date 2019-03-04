@@ -12,7 +12,6 @@ jobs:
       before_install:
         - brew install clang-format
         - brew install swiftformat
-        - easy_install --user scan-build
       script:
         - ./scripts/check_whitespace.sh
         - ./scripts/check_copyright.sh
