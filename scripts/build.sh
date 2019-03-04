@@ -168,29 +168,32 @@ if [[ -n "${SANITIZERS:-}" ]]; then
   done
 fi
 
+xcodebuild_actions=(
+  build
+  analyze
+  test
+)
+
 case "$product-$method-$platform" in
   Firebase-xcodebuild-*)
     RunXcodebuild \
         -workspace 'Example/Firebase.xcworkspace' \
         -scheme "AllUnitTests_$platform" \
         "${xcb_flags[@]}" \
-        build \
-        test
+        "${xcodebuild_actions[@]}"
 
     RunXcodebuild \
         -workspace 'GoogleUtilities/Example/GoogleUtilities.xcworkspace' \
         -scheme "Example_$platform" \
         "${xcb_flags[@]}" \
-        build \
-        test
+        "${xcodebuild_actions[@]}"
 
     if [[ $platform == 'iOS' ]]; then
       RunXcodebuild \
           -workspace 'Functions/Example/FirebaseFunctions.xcworkspace' \
           -scheme "FirebaseFunctions_Tests" \
           "${xcb_flags[@]}" \
-          build \
-          test
+          "${xcodebuild_actions[@]}"
 
       # Run integration tests (not allowed on PRs)
       if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
@@ -198,22 +201,19 @@ case "$product-$method-$platform" in
           -workspace 'Example/Firebase.xcworkspace' \
           -scheme "Auth_ApiTests" \
           "${xcb_flags[@]}" \
-          build \
-          test
+          "${xcodebuild_actions[@]}"
 
         RunXcodebuild \
           -workspace 'Example/Firebase.xcworkspace' \
           -scheme "Storage_IntegrationTests_iOS" \
           "${xcb_flags[@]}" \
-          build \
-          test
+          "${xcodebuild_actions[@]}"
 
         RunXcodebuild \
           -workspace 'Example/Firebase.xcworkspace' \
           -scheme "Database_IntegrationTests_iOS" \
           "${xcb_flags[@]}" \
-          build \
-          test
+          "${xcodebuild_actions[@]}"
       fi
 
       # Test iOS Objective-C static library build
@@ -225,8 +225,7 @@ case "$product-$method-$platform" in
           -workspace 'Example/Firebase.xcworkspace' \
           -scheme "AllUnitTests_$platform" \
           "${xcb_flags[@]}" \
-          build \
-          test
+          "${xcodebuild_actions[@]}"
 
       cd Functions/Example
       sed -i -e 's/use_frameworks/\#use_frameworks/' Podfile
@@ -236,8 +235,7 @@ case "$product-$method-$platform" in
           -workspace 'Functions/Example/FirebaseFunctions.xcworkspace' \
           -scheme "FirebaseFunctions_Tests" \
           "${xcb_flags[@]}" \
-          build \
-          test
+          "${xcodebuild_actions[@]}"
     fi
     ;;
 
@@ -246,8 +244,7 @@ case "$product-$method-$platform" in
         -workspace 'InAppMessaging/Example/InAppMessaging-Example-iOS.xcworkspace'  \
         -scheme 'InAppMessaging_Example_iOS' \
         "${xcb_flags[@]}" \
-        build \
-        test
+        "${xcodebuild_actions[@]}"
 
     cd InAppMessaging/Example
     sed -i -e 's/use_frameworks/\#use_frameworks/' Podfile
@@ -257,8 +254,7 @@ case "$product-$method-$platform" in
         -workspace 'InAppMessaging/Example/InAppMessaging-Example-iOS.xcworkspace'  \
         -scheme 'InAppMessaging_Example_iOS' \
         "${xcb_flags[@]}" \
-        build \
-        test
+        "${xcodebuild_actions[@]}"
 
     # Run UI tests on both iPad and iPhone simulators
     # TODO: Running two destinations from one xcodebuild command stopped working with Xcode 10.
@@ -267,16 +263,14 @@ case "$product-$method-$platform" in
         -workspace 'InAppMessagingDisplay/Example/InAppMessagingDisplay-Sample.xcworkspace'  \
         -scheme 'FiamDisplaySwiftExample' \
         "${xcb_flags[@]}" \
-        build \
-        test
+        "${xcodebuild_actions[@]}"
 
     RunXcodebuild \
         -workspace 'InAppMessagingDisplay/Example/InAppMessagingDisplay-Sample.xcworkspace'  \
         -scheme 'FiamDisplaySwiftExample' \
         -sdk 'iphonesimulator' \
         -destination 'platform=iOS Simulator,name=iPad Pro (9.7-inch)' \
-        build \
-        test
+        "${xcodebuild_actions[@]}"
 
     cd InAppMessagingDisplay/Example
     sed -i -e 's/use_frameworks/\#use_frameworks/' Podfile
@@ -287,16 +281,14 @@ case "$product-$method-$platform" in
         -workspace 'InAppMessagingDisplay/Example/InAppMessagingDisplay-Sample.xcworkspace'  \
         -scheme 'FiamDisplaySwiftExample' \
         "${xcb_flags[@]}" \
-        build \
-        test
+        "${xcodebuild_actions[@]}"
 
     RunXcodebuild \
         -workspace 'InAppMessagingDisplay/Example/InAppMessagingDisplay-Sample.xcworkspace'  \
         -scheme 'FiamDisplaySwiftExample' \
         -sdk 'iphonesimulator' \
         -destination 'platform=iOS Simulator,name=iPad Pro (9.7-inch)' \
-        build \
-        test
+        "${xcodebuild_actions[@]}"
     ;;
 
   Firestore-xcodebuild-iOS)
@@ -304,8 +296,7 @@ case "$product-$method-$platform" in
         -workspace 'Firestore/Example/Firestore.xcworkspace' \
         -scheme "Firestore_Tests_$platform" \
         "${xcb_flags[@]}" \
-        build \
-        test
+        "${xcodebuild_actions[@]}"
 
     # Firestore_SwiftTests_iOS require Swift 4, which needs Xcode 9
     if [[ "$xcode_major" -ge 9 ]]; then
@@ -313,8 +304,7 @@ case "$product-$method-$platform" in
           -workspace 'Firestore/Example/Firestore.xcworkspace' \
           -scheme "Firestore_SwiftTests_$platform" \
           "${xcb_flags[@]}" \
-          build \
-          test
+          "${xcodebuild_actions[@]}"
     fi
 
     RunXcodebuild \
