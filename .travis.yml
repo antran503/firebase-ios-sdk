@@ -264,7 +264,7 @@ jobs:
     - stage: analyze
       name: Analyze
       env:
-        - PROJECT=Firestore PLATFORM=iOS METHOD=xcodebuild SANITIZERS=tsan
+        - PROJECT=Firebase PLATFORM=iOS METHOD=xcodebuild SANITIZERS=tsan
       before_install:
         - ./scripts/if_changed.sh ./scripts/install_prereqs.sh
       script:
