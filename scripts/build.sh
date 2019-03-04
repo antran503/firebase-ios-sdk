@@ -71,7 +71,7 @@ fi
 function RunXcodebuild() {
   echo xcodebuild "$@"
 
-  scan-build --status-bugs xcodebuild "$@" | xcpretty; result=$?
+  xcodebuild "$@" | xcpretty; result=$?
   if [[ $result == 65 ]]; then
     echo "xcodebuild exited with 65, retrying" 1>&2
     sleep 5
@@ -172,6 +172,12 @@ xcodebuild_actions=(
   build
   analyze
   test
+)
+
+# Analyze flags
+xcb_flags+=(
+  CLANG_ANALYZER_OUTPUT=plist-html
+  CLANG_ANALYZER_OUTPUT_DIR="$(pwd)/clang"
 )
 
 case "$product-$method-$platform" in

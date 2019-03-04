@@ -20,7 +20,6 @@
 #   - METHOD - xcodebuild or cmake; default is xcodebuild
 
 bundle install
-easy_install --user scan-build
 
 case "$PROJECT-$PLATFORM-$METHOD" in
   Firebase-iOS-xcodebuild)
