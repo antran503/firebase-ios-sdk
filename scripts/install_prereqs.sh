@@ -20,6 +20,7 @@
 #   - METHOD - xcodebuild or cmake; default is xcodebuild
 
 bundle install
+easy_install --user scan-build
 
 case "$PROJECT-$PLATFORM-$METHOD" in
   Firebase-iOS-xcodebuild)
@@ -53,8 +54,6 @@ case "$PROJECT-$PLATFORM-$METHOD" in
     gem install xcpretty
     bundle exec pod install --project-directory=Example --repo-update
     bundle exec pod install --project-directory=GoogleUtilities/Example
-
-    easy_install --user scan-build
     ;;
 
   InAppMessaging-iOS-xcodebuild)
