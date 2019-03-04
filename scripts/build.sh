@@ -71,25 +71,11 @@ fi
 function failIfHasAnalyzerWarning() {
   if [ -d "$ANALYZER_OUTPUT_DIR" ]; then
     all_warnings=$(find clang -name "*.html")
-    pods_warnings=$(find clang -name "*.html" -path "clang/StaticAnalyzer/Pods/*")
 
-    all_warnings_file="${ANALYZER_OUTPUT_DIR}/all_warnings"
-    pods_warnings_file="${ANALYZER_OUTPUT_DIR}/pods_warnings"
-
-    echo "${all_warnings}" > $all_warnings_file
-    echo "${pods_warnings}" > $pods_warnings_file
-
-    are_all_warnings_pods_warnings=$(comm -23 <(sort ${all_warnings_file}) <(sort ${all_warnings_file}))
-
-    if [[ $pods_warnings ]]; then
-      echo WARNING: "There are analyzer warnings in the dependencies:"
-      echo WARNING: "${pods_warnings[@]}"
-    fi
-
-    if [[ $are_all_warnings_pods_warnings ]]; then
+    if [[ $all_warnings ]]; then
       echo ERROR: "There are analyzer warnings to fix:"
-      echo ERROR: "${are_all_warnings_pods_warnings[@]}"
-      exit 1 
+      echo ERROR: "${all_warnings[@]}"
+      exit 1
     fi
   else 
     echo "No Analyzer errors."
