@@ -1,4 +1,9 @@
 # Unreleased
+- [changed] Improved performance when querying over documents that contain
+  subcollections.
+
+# v1.0.2
+- [changed] Internal improvements.
 
 # v1.0.1
 - [changed] Internal improvements.
