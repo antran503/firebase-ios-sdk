@@ -68,6 +68,8 @@ if [[ -n "${SANITIZERS:-}" ]]; then
   echo "Using sanitizers: $SANITIZERS"
 fi
 
+# Exits with code 1 if there are any analyzer warning reports 
+# in ANALYZER_OUTPUT_DIR
 function failIfHasAnalyzerWarning() {
   if [ -d "$ANALYZER_OUTPUT_DIR" ]; then
     all_warnings=$(find clang -name "*.html")
