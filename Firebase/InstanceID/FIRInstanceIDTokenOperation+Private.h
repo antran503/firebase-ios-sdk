@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark - Initialization
 - (instancetype)initWithAction:(FIRInstanceIDTokenAction)action
            forAuthorizedEntity:(nullable NSString *)authorizedEntity
-                         scope:(NSString *)scope
+                         scope:(nullable NSString *)scope
                        options:(nullable NSDictionary<NSString *, NSString *> *)options
             checkinPreferences:(FIRInstanceIDCheckinPreferences *)checkinPreferences
                        keyPair:(FIRInstanceIDKeyPair *)keyPair;
@@ -45,7 +45,7 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark - Request Construction
 + (NSMutableURLRequest *)requestWithAuthHeader:(NSString *)authHeaderString;
 + (NSMutableArray<FIRInstanceIDURLQueryItem *> *)standardQueryItemsWithDeviceID:(NSString *)deviceID
-                                                                          scope:(NSString *)scope;
+                                                                          scope:(nullable NSString *)scope;
 - (NSArray<FIRInstanceIDURLQueryItem *> *)queryItemsWithKeyPair:(FIRInstanceIDKeyPair *)keyPair;
 
 #pragma mark - HTTP Headers

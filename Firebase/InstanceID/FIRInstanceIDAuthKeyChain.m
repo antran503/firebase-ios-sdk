@@ -33,7 +33,7 @@ NSString *const kFIRInstanceIDKeychainWildcardIdentifier = @"*";
 // cachedKeychainData is keyed by service and account, the value is an array of NSData.
 // It is used to cache the tokens per service, per account, as well as checkin data per service,
 // per account inside the keychain.
-@property(nonatomic, copy)
+@property(nonatomic)
     NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSArray<NSData *> *> *>
         *cachedKeychainData;
 

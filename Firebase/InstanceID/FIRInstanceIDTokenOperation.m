@@ -86,17 +86,6 @@ static NSString *const kFIRInstanceIDParamFCMLibVersion = @"X-cliv";
   return self;
 }
 
-- (void)dealloc {
-  _testBlock = nil;
-  _authorizedEntity = nil;
-  _scope = nil;
-  _options = nil;
-  _checkinPreferences = nil;
-  _keyPair = nil;
-  [_completionHandlers removeAllObjects];
-  _completionHandlers = nil;
-}
-
 - (void)addCompletionHandler:(FIRInstanceIDTokenOperationCompletion)handler {
   [self.completionHandlers addObject:handler];
 }

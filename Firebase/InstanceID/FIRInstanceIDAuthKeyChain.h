@@ -56,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
  *  @return A cached keychain item for a given account and service, or nil if it was not
  *          found or could not be retrieved.
  */
-- (NSData *)dataForService:(NSString *)service account:(NSString *)account;
+- (nullable NSData *)dataForService:(NSString *)service account:(NSString *)account;
 
 /**
  *  Remove the cached items from the keychain matching the service, account and access group.

@@ -26,6 +26,8 @@
 @class FIRInstanceIDTokenFetchOperation;
 @class FIRInstanceIDTokenStore;
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface FIRInstanceIDTokenManager (Test) <FIRInstanceIDStoreDelegate>
 
 @property(nonatomic, readonly, strong) FIRInstanceIDStore *instanceIDStore;
@@ -63,3 +65,5 @@
                                        action:(FIRInstanceIDTokenAction)action;
 
 @end
+
+NS_ASSUME_NONNULL_END
