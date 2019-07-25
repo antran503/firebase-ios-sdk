@@ -22,10 +22,13 @@
 #import "FBLPromises.h"
 #endif
 
+#import <FirebaseCore/FIRAppInternal.h>
+
 #import "FIRInstallationsAPIService.h"
 #import "FIRInstallationsErrorUtil.h"
 #import "FIRInstallationsIIDStore.h"
 #import "FIRInstallationsItem.h"
+#import "FIRInstallationsLogger.h"
 #import "FIRInstallationsSingleOperationPromiseCache.h"
 #import "FIRInstallationsStore.h"
 #import "FIRInstallationsStoredAuthToken.h"
@@ -33,6 +36,9 @@
 
 const NSNotificationName FIRInstallationIDDidChangeNotification =
     @"FIRInstallationIDDidChangeNotification";
+NSString *const kFIRInstallationIDDidChangeNotificationAppNameKey =
+    @"FIRInstallationIDDidChangeNotification";
+
 NSTimeInterval const kFIRInstallationsTokenExpirationThreshold = 60 * 60;  // 1 hour.
 
 @interface FIRInstallationsIDController ()
@@ -124,6 +130,10 @@ NSTimeInterval const kFIRInstallationsTokenExpirationThreshold = 60 * 60;  // 1 
 }
 
 - (FBLPromise<FIRInstallationsItem *> *)createGetInstallationItemPromise {
+  FIRLogDebug(kFIRLoggerInstallations,
+              kFIRInstallationsMessageCodeNewGetInstallationOperationCreated, @"%s, appName: %@",
+              __PRETTY_FUNCTION__, self.appName);
+
   FBLPromise<FIRInstallationsItem *> *installationItemPromise =
       [self getStoredInstallation].recover(^id(NSError *error) {
         return [self createAndSaveFID];
@@ -164,10 +174,7 @@ NSTimeInterval const kFIRInstallationsTokenExpirationThreshold = 60 * 60;  // 1 
         return [self createAndSaveInstallationWithFID:FID];
       })
       .then(^FIRInstallationsItem *(FIRInstallationsItem *installation) {
-        // TODO: Consider passing additional info like FIRApp ID or maybe even FIRInstallationsItem
-        [[NSNotificationCenter defaultCenter]
-            postNotificationName:FIRInstallationIDDidChangeNotification
-                          object:nil];
+        [self postFIDDidChangeNotification];
         return installation;
       });
 }
@@ -184,6 +191,11 @@ NSTimeInterval const kFIRInstallationsTokenExpirationThreshold = 60 * 60;  // 1 
 }
 
 - (FBLPromise<NSString *> *)migrateOrGenerateFID {
+  if (![self isDefaultApp]) {
+    // Existing IID should be used only for default FirebaseApp.
+    return [FBLPromise resolvedWith:[FIRInstallationsItem generateFID]];
+  }
+
   return [self.IIDStore existingIID].recover(^NSString *(NSError *error) {
     return [FIRInstallationsItem generateFID];
   });
@@ -205,14 +217,20 @@ NSTimeInterval const kFIRInstallationsTokenExpirationThreshold = 60 * 60;  // 1 
   }
 
   return [self.APIService registerInstallation:installation]
-      .then(^id(FIRInstallationsItem *registredInstallation) {
-        // Expected successful result: @[FIRInstallationsItem *registredInstallation, NSNull]
+      .then(^id(FIRInstallationsItem *registeredInstallation) {
+        // Expected successful result: @[FIRInstallationsItem *registeredInstallation, NSNull]
         return [FBLPromise all:@[
-          registredInstallation, [self.installationsStore saveInstallation:registredInstallation]
+          registeredInstallation, [self.installationsStore saveInstallation:registeredInstallation]
         ]];
       })
       .then(^FIRInstallationsItem *(NSArray *result) {
-        return result.firstObject;
+        FIRInstallationsItem *registeredInstallation = result.firstObject;
+        // Server may respond with a different FID if the sent one cannot be accepted.
+        if (![registeredInstallation.firebaseInstallationID
+                isEqualToString:installation.firebaseInstallationID]) {
+          [self postFIDDidChangeNotification];
+        }
+        return registeredInstallation;
       });
 }
 
@@ -228,9 +246,14 @@ NSTimeInterval const kFIRInstallationsTokenExpirationThreshold = 60 * 60;  // 1 
 
 - (FBLPromise<FIRInstallationsItem *> *)installationWithValidAuthTokenForcingRefresh:
     (BOOL)forceRefresh {
+  FIRLogDebug(kFIRLoggerInstallations, kFIRInstallationsMessageCodeNewGetAuthTokenOperationCreated,
+              @"-[FIRInstallationsIDController installationWithValidAuthTokenForcingRefresh:%@], "
+              @"appName: %@",
+              @(forceRefresh), self.appName);
+
   return [self getInstallationItem]
-      .then(^FBLPromise<FIRInstallationsItem *> *(FIRInstallationsItem *installstion) {
-        return [self registerInstallationIfNeeded:installstion];
+      .then(^FBLPromise<FIRInstallationsItem *> *(FIRInstallationsItem *installation) {
+        return [self registerInstallationIfNeeded:installation];
       })
       .then(^id(FIRInstallationsItem *registeredInstallation) {
         BOOL isTokenExpiredOrExpiresSoon =
@@ -266,6 +289,10 @@ NSTimeInterval const kFIRInstallationsTokenExpirationThreshold = 60 * 60;  // 1 
 }
 
 - (FBLPromise<NSNull *> *)createDeleteInstallationPromise {
+  FIRLogDebug(kFIRLoggerInstallations,
+              kFIRInstallationsMessageCodeNewDeleteInstallationOperationCreated, @"%s, appName: %@",
+              __PRETTY_FUNCTION__, self.appName);
+
   // Check for ongoing requests first, if there is no a request, then check local storage for
   // existing installation.
   FBLPromise<FIRInstallationsItem *> *currentInstallationPromise =
@@ -280,10 +307,11 @@ NSTimeInterval const kFIRInstallationsTokenExpirationThreshold = 60 * 60;  // 1 
         return [self.installationsStore removeInstallationForAppID:installation.appID
                                                            appName:installation.firebaseAppName];
       })
+      .then(^FBLPromise<NSNull *> *(NSNull *result) {
+        return [self deleteExistingIIDIfNeeded];
+      })
       .then(^NSNull *(NSNull *result) {
-        [[NSNotificationCenter defaultCenter]
-            postNotificationName:FIRInstallationIDDidChangeNotification
-                          object:nil];
+        [self postFIDDidChangeNotification];
         return result;
       });
 }
@@ -314,10 +342,33 @@ NSTimeInterval const kFIRInstallationsTokenExpirationThreshold = 60 * 60;  // 1 
   });
 }
 
+- (FBLPromise<NSNull *> *)deleteExistingIIDIfNeeded {
+  if ([self isDefaultApp]) {
+    return [self.IIDStore deleteExistingIID];
+  } else {
+    return [FBLPromise resolvedWith:[NSNull null]];
+  }
+}
+
 - (nullable FBLPromise<FIRInstallationsItem *> *)mostRecentInstallationOperation {
   return [self.authTokenForcingRefreshPromiseCache getExistingPendingPromise]
              ?: [self.authTokenPromiseCache getExistingPendingPromise]
                     ?: [self.getInstallationPromiseCache getExistingPendingPromise];
+}
+
+#pragma mark - Notifications
+
+- (void)postFIDDidChangeNotification {
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:FIRInstallationIDDidChangeNotification
+                    object:nil
+                  userInfo:@{kFIRInstallationIDDidChangeNotificationAppNameKey : self.appName}];
+}
+
+#pragma mark - Default App
+
+- (BOOL)isDefaultApp {
+  return [self.appName isEqualToString:kFIRDefaultAppName];
 }
 
 @end

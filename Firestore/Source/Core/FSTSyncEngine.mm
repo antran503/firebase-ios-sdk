@@ -28,7 +28,6 @@
 #import "Firestore/Source/Core/FSTView.h"
 #import "Firestore/Source/Local/FSTLocalStore.h"
 #import "Firestore/Source/Local/FSTLocalViewChanges.h"
-#import "Firestore/Source/Local/FSTLocalWriteResult.h"
 #import "Firestore/Source/Local/FSTQueryData.h"
 #import "Firestore/Source/Model/FSTDocument.h"
 #import "Firestore/Source/Model/FSTMutationBatch.h"
@@ -38,6 +37,7 @@
 #include "Firestore/core/src/firebase/firestore/core/target_id_generator.h"
 #include "Firestore/core/src/firebase/firestore/core/transaction.h"
 #include "Firestore/core/src/firebase/firestore/core/view_snapshot.h"
+#include "Firestore/core/src/firebase/firestore/local/local_write_result.h"
 #include "Firestore/core/src/firebase/firestore/local/reference_set.h"
 #include "Firestore/core/src/firebase/firestore/model/document_key.h"
 #include "Firestore/core/src/firebase/firestore/model/document_map.h"
@@ -56,6 +56,7 @@ using firebase::firestore::auth::User;
 using firebase::firestore::core::TargetIdGenerator;
 using firebase::firestore::core::Transaction;
 using firebase::firestore::core::ViewSnapshot;
+using firebase::firestore::local::LocalWriteResult;
 using firebase::firestore::local::ReferenceSet;
 using firebase::firestore::model::BatchId;
 using firebase::firestore::model::DocumentKey;
@@ -66,6 +67,7 @@ using firebase::firestore::model::ListenSequenceNumber;
 using firebase::firestore::model::OnlineState;
 using firebase::firestore::model::SnapshotVersion;
 using firebase::firestore::model::TargetId;
+using firebase::firestore::remote::Datastore;
 using firebase::firestore::remote::RemoteEvent;
 using firebase::firestore::remote::RemoteStore;
 using firebase::firestore::remote::TargetChange;
@@ -264,10 +266,10 @@ class LimboResolution {
             completion:(FSTVoidErrorBlock)completion {
   [self assertDelegateExistsForSelector:_cmd];
 
-  FSTLocalWriteResult *result = [self.localStore locallyWriteMutations:std::move(mutations)];
-  [self addMutationCompletionBlock:completion batchID:result.batchID];
+  LocalWriteResult result = [self.localStore locallyWriteMutations:std::move(mutations)];
+  [self addMutationCompletionBlock:completion batchID:result.batch_id()];
 
-  [self emitNewSnapshotsAndNotifyLocalStoreWithChanges:result.changes remoteEvent:absl::nullopt];
+  [self emitNewSnapshotsAndNotifyLocalStoreWithChanges:result.changes() remoteEvent:absl::nullopt];
   _remoteStore->FillWritePipeline();
 }
 
@@ -305,6 +307,13 @@ class LimboResolution {
     workerQueue->Enqueue(
         [self, retries, workerQueue, updateCallback, resultCallback, transaction, maybe_result] {
           if (!maybe_result.ok()) {
+            if (retries > 0 && [self isRetryableTransactionError:maybe_result.status()]) {
+              workerQueue->VerifyIsCurrentQueue();
+              return [self transactionWithRetries:(retries - 1)
+                                      workerQueue:workerQueue
+                                   updateCallback:updateCallback
+                                   resultCallback:resultCallback];
+            }
             resultCallback(std::move(maybe_result));
             return;
           }
@@ -315,16 +324,16 @@ class LimboResolution {
               resultCallback(std::move(maybe_result));
               return;
             }
-            // TODO(b/35201829): Only retry on real transaction failures.
-            if (retries == 0) {
-              resultCallback(std::move(status));
-              return;
+
+            if (retries > 0 && [self isRetryableTransactionError:status]) {
+              workerQueue->VerifyIsCurrentQueue();
+              return [self transactionWithRetries:(retries - 1)
+                                      workerQueue:workerQueue
+                                   updateCallback:updateCallback
+                                   resultCallback:resultCallback];
             }
-            workerQueue->VerifyIsCurrentQueue();
-            return [self transactionWithRetries:(retries - 1)
-                                    workerQueue:workerQueue
-                                 updateCallback:updateCallback
-                                 resultCallback:resultCallback];
+            resultCallback(std::move(status));
+            return;
           });
         });
   });
@@ -634,6 +643,14 @@ class LimboResolution {
   }
 
   return NO;
+}
+
+- (BOOL)isRetryableTransactionError:(const Status &)error {
+  // In transactions, the backend will fail outdated reads with FAILED_PRECONDITION and
+  // non-matching document versions with ABORTED. These errors should be retried.
+  FirestoreErrorCode code = error.code();
+  return code == FirestoreErrorCode::Aborted || code == FirestoreErrorCode::FailedPrecondition ||
+         !Datastore::IsPermanentError(error);
 }
 
 @end

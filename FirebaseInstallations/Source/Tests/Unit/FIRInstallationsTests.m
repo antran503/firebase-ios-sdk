@@ -20,7 +20,6 @@
 
 #import <FirebaseCore/FIRAppInternal.h>
 #import <FirebaseCore/FIROptionsInternal.h>
-#import <FirebaseCore/FirebaseCore.h>
 #import "FBLPromise+Testing.h"
 #import "FIRInstallations+Tests.h"
 #import "FIRInstallationsErrorUtil+Tests.h"
@@ -65,7 +64,7 @@
 
 - (void)testInstallationIDSuccess {
   // Stub get installation.
-  FIRInstallationsItem *installation = [FIRInstallationsItem createValidInstallationItem];
+  FIRInstallationsItem *installation = [FIRInstallationsItem createUnregisteredInstallationItem];
   OCMExpect([self.mockIDController getInstallationItem])
       .andReturn([FBLPromise resolvedWith:installation]);
 
