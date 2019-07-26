@@ -58,7 +58,6 @@ using firebase::firestore::api::ThrowInvalidArgument;
 using firebase::firestore::auth::CredentialsProvider;
 using firebase::firestore::model::DatabaseId;
 using firebase::firestore::util::AsyncQueue;
-using firebase::firestore::util::Status;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -217,8 +216,7 @@ NS_ASSUME_NONNULL_BEGIN
 
       // If the user set an error, disregard the result.
       if (error) {
-        Status fromNSError = Status::FromNSError(error);
-        // If the the status is a user error, set flag to not retry the transaction.
+        // If the error is a user error, set flag to not retry the transaction.
         if (error.domain != FIRFirestoreErrorDomain) {
           internalTransaction->MarkPermanentlyFailed();
         }
