@@ -11,9 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Fail on any error.
+set -e
+# Display commands being run.
+set -x
+
 ROOT_DIR=$KOKORO_ARTIFACTS_DIR/github/firebase-ios-sdk
 # DEVELOPER_DIR=/Applications/Xcode_10.1.app
 sudo xcode-select -s /Applications/Xcode_10.1.app
+
+xcode-select -p
+
+sudo
 
 cd $ROOT_DIR
 
