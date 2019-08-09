@@ -20,7 +20,7 @@ ROOT_DIR=$KOKORO_ARTIFACTS_DIR/github/firebase-ios-sdk
 # DEVELOPER_DIR=/Applications/Xcode_10.1.app
 sudo xcode-select -s /Applications/Xcode_10.1.app
 
-xcode-select -p
+sudo xcode-select -p
 
 sudo
 
