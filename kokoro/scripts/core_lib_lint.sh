@@ -20,4 +20,4 @@ echo $(pwd)
 
 bundle install
 
-./scripts/pod_lib_lint.rb GoogeUtilities.podspec --verbose
+./scripts/pod_lib_lint.rb GoogleUtilities.podspec --verbose
