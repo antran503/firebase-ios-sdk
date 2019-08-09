@@ -11,4 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-./scripts/pod_lib_lint.rb FirebaseCore.podspec
+ROOT_DIR=$(KOKORO_ARTIFACTS_DIR)/github/firebase-ios-sdk
+
+cd $ROOT_DIR
+
+./scripts/if_changed.sh ./scripts/pod_lib_lint.rb FirebaseCore.podspec
