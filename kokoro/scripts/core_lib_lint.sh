@@ -13,8 +13,15 @@
 
 ROOT_DIR=$KOKORO_ARTIFACTS_DIR/github/firebase-ios-sdk
 
+PROJECT=Firebase
+PLATFORM=iOS
+METHOD=pod-lib-lint
+
 cd $ROOT_DIR
 
 echo $(pwd)
 
+bundle install
+
+./scripts/install_prereqs.sh
 ./scripts/pod_lib_lint.rb FirebaseCore.podspec
