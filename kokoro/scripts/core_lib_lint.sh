@@ -22,8 +22,6 @@ sudo xcode-select -s /Applications/Xcode_10.1.app
 
 sudo xcode-select -p
 
-sudo
-
 cd $ROOT_DIR
 
 echo $(pwd)
