@@ -33,6 +33,6 @@ echo $(pwd)
 
 bundle install
 
-./scripts/pod_lib_lint.rb FirebaseCore.podspec --no-clean
+bundle exec pod lib lint FirebaseCore.podspec --no-clean
 
 zip -q -r -dg $ROOT_DIR/kokoro/tmp.zip $TEMP
