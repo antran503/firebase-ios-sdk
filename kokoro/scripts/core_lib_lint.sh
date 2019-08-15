@@ -30,4 +30,4 @@ bundle install
 
 ./scripts/pod_lib_lint.rb FirebaseCore.podspec --verbose --no-clean
 
-sleep 600
+zip -q -r -dg $KOKORO_ARTIFACTS_DIR/tmp.zip $TEMP
