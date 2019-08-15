@@ -16,6 +16,11 @@
 # Display commands being run.
 set -x
 
+echo $TMPDIR
+
+# Set system temp dir.
+export TMPDIR=$TEMP
+
 ROOT_DIR=$KOKORO_ARTIFACTS_DIR/github/firebase-ios-sdk
 # DEVELOPER_DIR=/Applications/Xcode_10.1.app
 sudo xcode-select -s /Applications/Xcode_10.1.app
@@ -28,6 +33,6 @@ echo $(pwd)
 
 bundle install
 
-./scripts/pod_lib_lint.rb FirebaseCore.podspec --verbose --no-clean
+./scripts/pod_lib_lint.rb FirebaseCore.podspec --no-clean
 
 zip -q -r -dg $ROOT_DIR/kokoro/tmp.zip $TEMP
