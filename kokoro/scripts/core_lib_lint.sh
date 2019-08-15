@@ -12,7 +12,7 @@
 # limitations under the License.
 
 # Fail on any error.
-set -e
+# set -e
 # Display commands being run.
 set -x
 
