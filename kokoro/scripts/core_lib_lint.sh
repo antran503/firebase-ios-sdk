@@ -28,4 +28,6 @@ echo $(pwd)
 
 bundle install
 
-./scripts/pod_lib_lint.rb GoogleUtilities.podspec --verbose
+./scripts/pod_lib_lint.rb FirebaseCore.podspec --verbose --no-clean
+
+sleep 600
