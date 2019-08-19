@@ -24,17 +24,14 @@ export TMPDIR=$TEMP
 ROOT_DIR=$KOKORO_ARTIFACTS_DIR/github/firebase-ios-sdk
 # DEVELOPER_DIR=/Applications/Xcode_10.1.app
 sudo xcode-select -s /Applications/Xcode_10.1.app
-
 sudo xcode-select -p
 
 cd $ROOT_DIR
-
 echo $(pwd)
 
 bundle install
 
-bundle exec pod lib lint FirebaseCore.podspec --verbose --no-clean --use-libraries --use-modular-headers
-
+./scripts/pod_lib_lint.rb FirebaseCore.podspec --verbose --no-clean
 zip -q -r -dg $ROOT_DIR/kokoro/tmp.zip $TEMP
 
 ./kokoro/scripts/env_test.rb
