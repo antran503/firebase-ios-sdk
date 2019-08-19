@@ -27,7 +27,7 @@ ROOT_DIR=$KOKORO_ARTIFACTS_DIR/github/firebase-ios-sdk
 
 # sudo xcode-select -p
 
-# cd $ROOT_DIR
+cd $ROOT_DIR
 
 # echo $(pwd)
 
