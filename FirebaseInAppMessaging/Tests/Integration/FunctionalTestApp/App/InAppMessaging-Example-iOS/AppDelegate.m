@@ -55,6 +55,10 @@
   sdkSetting.loggerInVerboseMode = YES;
   sdkSetting.firebaseAutoDataCollectionEnabled = NO;
 
+  sdkSetting.firebaseProjectNumber = @"843068471779";
+  sdkSetting.firebaseAppId = @"1:843068471779:ios:e367ffe84bfcd230";
+  sdkSetting.apiKey = @"AIzaSyCzNFUEHJaeLcy57kVzwZN4EzDsd7Nxkps";
+  
   sdkSetting.clearcutStrategy =
       [[FIRIAMClearcutStrategy alloc] initWithMinWaitTimeInMills:5 * 1000   // 5 seconds
                                               maxWaitTimeInMills:30 * 1000  // 30 seconds
