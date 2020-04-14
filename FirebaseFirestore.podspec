@@ -108,4 +108,39 @@ Google Cloud Firestore is a NoSQL document database built for automatic scaling,
   CMD
 
   s.compiler_flags = '$(inherited) -Wreorder -Werror=reorder -Wno-comma'
+
+  s.test_spec 'unit' do |t|
+    t.source_files = [
+      'Firestore/Example/Tests/**',
+      'Firestore/Protos/cpp/**',
+      'Firestore/core/test/**',
+    ]
+
+    t.exclude_files = [
+      'Firestore/Example/Tests/Test-Info.plist',
+      'Firestore/Example/Tests/Integration/**',
+    ]
+
+    t.dependency 'GoogleBenchmark'
+    t.dependency 'GoogleTest'
+    t.dependency 'ProtobufCpp'
+  end
+
+  s.test_spec 'integration' do |t|
+    t.source_files = [
+      'Firestore/Example/Tests/**',
+      'Firestore/Protos/cpp/**',
+      'Firestore/Swift/Tests/**',
+      'Firestore/core/test/**',
+    ]
+
+    t.exclude_files = [
+      'Firestore/Example/Tests/Test-Info.plist',
+    ]
+
+    t.dependency 'FirebaseFirestoreSwift'
+    t.dependency 'GoogleBenchmark'
+    t.dependency 'GoogleTest'
+    t.dependency 'ProtobufCpp'
+  end
 end
