@@ -33,6 +33,10 @@
 @property(nonatomic) BOOL isTesterSignedIn;
 @end
 
+
+NSString *const FIRAppDistributionErrorDomain = @"com.firebase.appdistribution";
+NSString *const FIRAppDistributionErrorDetailsKey = @"details";
+
 @implementation FIRAppDistribution
 
 // The OAuth scope needed to authorize the App Distribution Tester API
@@ -45,6 +49,12 @@ NSString *const kTesterAPIClientID =
     @"319754533822-osu3v3hcci24umq6diathdm0dipds1fb.apps.googleusercontent.com";
 NSString *const kIssuerURL = @"https://accounts.google.com";
 NSString *const kAppDistroLibraryName = @"fire-fad";
+
+NSString *const kReleasesKey = @"releases";
+NSString *const kLatestReleaseKey = @"latest";
+NSString *const kCodeHashKey = @"codeHash";
+
+NSString *const kAuthErrorMessage = @"Unable to authenticate the tester";
 
 #pragma mark - Singleton Support
 
@@ -78,7 +88,7 @@ NSString *const kAppDistroLibraryName = @"fire-fad";
   FIRComponentCreationBlock creationBlock =
       ^id _Nullable(FIRComponentContainer *container, BOOL *isCacheable) {
     if (!container.app.isDefaultApp) {
-      // TODO: Implement error handling
+      // TODO: Remove this and log error
       @throw([NSException exceptionWithName:@"NotImplementedException"
                                      reason:@"This code path is not implemented yet"
                                    userInfo:nil]);
@@ -134,14 +144,28 @@ NSString *const kAppDistroLibraryName = @"fire-fad";
   self.isTesterSignedIn = false;
 }
 
+- (NSError *)NSErrorForErrorCodeAndMessage:(FIRAppDistributionError)errorCode
+                                   message:(NSString *)message {
+    NSDictionary *userInfo = @{FIRAppDistributionErrorDetailsKey : message};
+    return [NSError errorWithDomain:FIRAppDistributionErrorDomain code:errorCode userInfo:userInfo];
+}
+
 - (void)fetchReleases:(FIRAppDistributionUpdateCheckCompletion)completion {
 
     [self.authState performActionWithFreshTokens:^(NSString *_Nonnull accessToken,
                                                NSString *_Nonnull idToken,
                                                NSError *_Nullable error) {
       if (error) {
-        NSLog(@"Error fetching fresh tokens: %@", [error localizedDescription]);
-        [self signOutTester];
+          // Error fetching fresh tokens
+          // TODO: Do we need a less aggresive strategy here? maybe a retry?
+          [self signOutTester];
+          NSError *HTTPError = [self NSErrorForErrorCodeAndMessage:FIRAppDistributionErrorAuthenticationFailure
+                                    message:kAuthErrorMessage];
+          
+        dispatch_async(dispatch_get_main_queue(), ^{
+            completion(nil, HTTPError);
+        });
+          
         return;
       }
 
@@ -159,24 +183,32 @@ NSString *const kAppDistroLibraryName = @"fire-fad";
         NSURLSessionDataTask *listReleasesDataTask = [URLSession
             dataTaskWithRequest:request
               completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-                if (error) {
-                  // TODO: Reformat error into error code
-                  completion(nil, error);
-                  return;
-                }
-
                 NSHTTPURLResponse *HTTPResponse = (NSHTTPURLResponse *)response;
-
-                if (HTTPResponse.statusCode == 200) {
-                  [self handleReleasesAPIResponseWithData:data completion:completion];
+                if (error || HTTPResponse.statusCode != 200) {
+                    NSError *HTTPError = nil;
+                    if(HTTPResponse == nil && error) {
+                        // Handles network timeouts or no internet connectivity
+                        NSString *message = error.userInfo[NSLocalizedDescriptionKey] ? error.userInfo[NSLocalizedDescriptionKey] : @"";
+                        
+                        HTTPError = [self NSErrorForErrorCodeAndMessage:FIRAppDistributionErrorNetworkFailure               message:message];
+                    }
+                    else if(HTTPResponse.statusCode == 401) {
+                        // TODO: Maybe sign out tester?
+                        HTTPError = [self NSErrorForErrorCodeAndMessage:FIRAppDistributionErrorAuthenticationFailure
+                                                            message:kAuthErrorMessage];
+                    } else {
+                        HTTPError = [self NSErrorForErrorCodeAndMessage:FIRAppDistributionErrorUnknown
+                                                            message:@""];
+                    }
+                    
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        completion(nil, HTTPError);
+                    });
+                  
                 } else {
-                  // TODO: Handle non-200 http response
-                  NSLog(@"ERROR - Non 200 service response - %@", HTTPResponse);
-                  @throw([NSException exceptionWithName:@"NotImplementedException"
-                                                 reason:@"This code path is not implemented yet"
-                                               userInfo:nil]);
+                    [self handleReleasesAPIResponseWithData:data completion:completion];
                 }
-              }];
+            }];
 
         [listReleasesDataTask resume];
     }];
@@ -213,6 +245,7 @@ NSString *const kAppDistroLibraryName = @"fire-fad";
                                      presentingViewController:self.safariHostingViewController
                                                      callback:^(OIDAuthState *_Nullable authState,
                                                                 NSError *_Nullable error) {
+          // TODO: Handle error code for user cancellation
           self.authState = authState;
           if(authState) {
               [FIRAppDistributionAuthPersistence persistAuthState:authState];
@@ -240,28 +273,34 @@ NSString *const kAppDistroLibraryName = @"fire-fad";
 - (void)handleReleasesAPIResponseWithData:data
                                completion:(FIRAppDistributionUpdateCheckCompletion)completion {
   NSError *error = nil;
-  NSDictionary *object = [NSJSONSerialization
+  NSDictionary *serializedResponse = [NSJSONSerialization
                           JSONObjectWithData:data
                           options:0
                           error:&error];
 
-    NSArray *releaseList = [object objectForKey:@"releases"];
+    NSArray *releaseList = [serializedResponse objectForKey:kReleasesKey];
     for (NSDictionary *releaseDict in releaseList) {
-        if([[releaseDict objectForKey:@"latest"] boolValue]) {
-            NSString *codeHash = [releaseDict objectForKey:@"codeHash"];
+        if([[releaseDict objectForKey:kLatestReleaseKey] boolValue]) {
+            NSString *codeHash = [releaseDict objectForKey:kCodeHashKey];
             NSString *executablePath = [[NSBundle mainBundle] executablePath];
             FIRAppDistributionMachO *machO = [[FIRAppDistributionMachO alloc] initWithPath:executablePath];
 
-            if(![codeHash isEqualToString:machO.codeHash]) {
+            if(codeHash && ![codeHash isEqualToString:machO.codeHash]) {
                 FIRAppDistributionRelease *release = [[FIRAppDistributionRelease alloc] initWithDictionary:releaseDict];
                 dispatch_async(dispatch_get_main_queue(), ^{
                     completion(release, nil);
                 });
+                
+                return;
             }
 
             break;
         }
     }
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        completion(nil, nil);
+    });
 }
 - (void)checkForUpdateWithCompletion:(FIRAppDistributionUpdateCheckCompletion)completion {
   if (self.isTesterSignedIn) {
