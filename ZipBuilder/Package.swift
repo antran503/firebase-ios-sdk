@@ -24,6 +24,9 @@ let package = Package(
   products: [
     .executable(name: "firebase-pod-updater", targets: ["firebase-pod-updater"]),
     .executable(name: "ReleasePackager", targets: ["ZipBuilder"]),
+
+    // Semantic versioning
+    .library(name: "sem-versions", targets: ["sem-versions"]),
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-argument-parser", .exact("0.0.1")),
@@ -38,11 +41,25 @@ let package = Package(
     ),
     .target(
       name: "ZipBuilder",
-      dependencies: ["ArgumentParser", "ManifestReader"]
+      dependencies: ["ArgumentParser", "ManifestReader", "ShellUtils"]
     ),
     .target(
       name: "ManifestReader",
       dependencies: ["SwiftProtobuf"]
+    ),
+    .target(name: "ShellUtils"),
+
+    // Semantic versioning
+    .target(
+      name: "sem-versions",
+      dependencies: [
+        .product(name: "ArgumentParser", package: "swift-argument-parser"),
+        "ShellUtils",
+      ]
+    ),
+    .testTarget(
+      name: "sem-versionsTests",
+      dependencies: ["sem-versions"]
     ),
   ]
 )
