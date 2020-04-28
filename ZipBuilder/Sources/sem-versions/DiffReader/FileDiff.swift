@@ -23,7 +23,8 @@ struct FileDiff {
 
 extension FileDiff {
   struct Line {
-
+    var current: String
+    var original: String
   }
 }
 

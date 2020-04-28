@@ -16,8 +16,19 @@
 
 import Foundation
 
+class GitDiffReader: DiffReader {
+  func diff(version: CodeVersion, baseVersion: CodeVersion) throws -> Diff {
+    throw DiffReaderError.unknown
+  }
 
-protocol DiffReader {
-  func diff(version: CodeVersion, baseVersion: CodeVersion) throws -> Diff
-  func fileDiff(path: Path, version: CodeVersion, baseVersion: CodeVersion) throws -> FileDiff
+
+  func fileDiff(path: Path, version: CodeVersion, baseVersion: CodeVersion) throws -> FileDiff {
+    throw DiffReaderError.unknown
+  }
+}
+
+extension GitDiffReader {
+  enum DiffReaderError: Error {
+    case unknown
+  }
 }
