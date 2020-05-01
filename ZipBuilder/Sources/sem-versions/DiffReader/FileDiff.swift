@@ -17,9 +17,10 @@
 import Foundation
 
 struct FileDiff {
+  var oldPath: Path
+  var newPath: Path
   var lines: [Line]
 }
-
 
 extension FileDiff {
   struct Line {
@@ -27,4 +28,3 @@ extension FileDiff {
     var original: String
   }
 }
-

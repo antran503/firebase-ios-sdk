@@ -16,6 +16,4 @@
 
 import Foundation
 
-protocol CodeVersion {
-  
-}
+protocol CodeVersion {}

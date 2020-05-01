@@ -16,7 +16,6 @@
 
 import Foundation
 
-
 protocol DiffReader {
   func diff(version: CodeVersion, baseVersion: CodeVersion) throws -> Diff
   func fileDiff(path: Path, version: CodeVersion, baseVersion: CodeVersion) throws -> FileDiff

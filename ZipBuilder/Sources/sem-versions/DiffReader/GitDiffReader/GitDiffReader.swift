@@ -16,11 +16,12 @@
 
 import Foundation
 
+import ShellUtils
+
 class GitDiffReader: DiffReader {
   func diff(version: CodeVersion, baseVersion: CodeVersion) throws -> Diff {
     throw DiffReaderError.unknown
   }
-
 
   func fileDiff(path: Path, version: CodeVersion, baseVersion: CodeVersion) throws -> FileDiff {
     throw DiffReaderError.unknown
