@@ -24,7 +24,13 @@ struct FileDiff {
 
 extension FileDiff {
   struct Line {
-    var current: String
-    var original: String
+    enum LineType {
+      case added
+      case removed
+      case unmodified
+    }
+
+    var type: LineType
+    var content: String
   }
 }

@@ -33,7 +33,7 @@ final class GitDiffCommandOutputParserTests: XCTestCase {
       XCTAssertEqual(fileDiff.oldPath, "ZipBuilder/Sources/ZipBuilder/ShellUtils.swift")
       XCTAssertEqual(fileDiff.newPath, "ZipBuilder/Sources/ShellUtils/ShellUtils.swift")
 
-      XCTAssertEqual(fileDiff.lines.count, 33)
+      XCTAssertEqual(fileDiff.lines.count, 17)
     } catch {
       XCTFail("Parse Error: \(error)")
     }
