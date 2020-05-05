@@ -17,7 +17,7 @@
 import Foundation
 
 protocol GitDiffCommandOutputParserProtocol {
-  func parseDiff() throws -> FileDiff
+  func parseDiff() throws -> Diff
 }
 
 class GitDiffCommandOutputParser: GitDiffCommandOutputParserProtocol {
@@ -26,7 +26,7 @@ class GitDiffCommandOutputParser: GitDiffCommandOutputParserProtocol {
     self.string = string
   }
 
-  func parseDiff() throws -> FileDiff {
+  func parseDiff() throws -> Diff {
     if #available(OSX 10.15, *) {
       let scanner = Scanner(string: string)
       scanner.charactersToBeSkipped = nil
@@ -39,7 +39,8 @@ class GitDiffCommandOutputParser: GitDiffCommandOutputParserProtocol {
         allDiffLines += lines
       }
 
-      return FileDiff(oldPath: oldPath, newPath: newPath, lines: allDiffLines)
+      let file = File(path: newPath, diff: FileDiff(oldPath: oldPath, newPath: newPath, lines: allDiffLines))
+      return Diff(createdFiles: [], deletedFiles: [], modifiedFiles: [file])
     } else {
       throw GitDiffCommandOutputParser.ParserError.unsupportedOSVersion
     }

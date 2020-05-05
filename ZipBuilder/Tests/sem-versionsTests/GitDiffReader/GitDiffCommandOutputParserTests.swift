@@ -28,18 +28,45 @@ final class GitDiffCommandOutputParserTests: XCTestCase {
 
       let parser = GitDiffCommandOutputParser(string: diffString)
 
-      let fileDiff = try parser.parseDiff()
+      let diff = try parser.parseDiff()
+      XCTAssert(diff.createdFiles.isEmpty)
+      XCTAssert(diff.createdFiles.isEmpty)
+      XCTAssertEqual(diff.modifiedFiles.count, 1)
+      guard let file = diff.modifiedFiles.first else {
+        XCTFail("Missing modified file diff.")
+        return
+      }
 
-      XCTAssertEqual(fileDiff.oldPath, "ZipBuilder/Sources/ZipBuilder/ShellUtils.swift")
-      XCTAssertEqual(fileDiff.newPath, "ZipBuilder/Sources/ShellUtils/ShellUtils.swift")
+      XCTAssertEqual(file.diff.oldPath, "ZipBuilder/Sources/ZipBuilder/ShellUtils.swift")
+      XCTAssertEqual(file.diff.newPath, "ZipBuilder/Sources/ShellUtils/ShellUtils.swift")
 
-      XCTAssertEqual(fileDiff.lines.count, 17)
+      XCTAssertEqual(file.diff.lines.count, 17)
     } catch {
       XCTFail("Parse Error: \(error)")
     }
   }
 
+  func testMultiFileDiff() {
+//    do {
+//        let diffString =
+//          try String(contentsOfFile: "/Users/mmaksym/Projects/firebase-ios-sdk2/ZipBuilder/TestResources/GitDiffReader/MultiFileDiff.diff")
+//
+//        let parser = GitDiffCommandOutputParser(string: diffString)
+//
+//        let fileDiff = try parser.parseDiff()
+//
+////        XCTAssertEqual(fileDiff.oldPath, "ZipBuilder/Sources/ZipBuilder/ShellUtils.swift")
+////        XCTAssertEqual(fileDiff.newPath, "ZipBuilder/Sources/ShellUtils/ShellUtils.swift")
+////
+////        XCTAssertEqual(fileDiff.lines.count, 17)
+//      } catch {
+//        XCTFail("Parse Error: \(error)")
+//      }
+//    }
+  }
+
   static var allTests = [
     ("testSingleFileDiff", testSingleFileDiff),
+    ("testMultiFileDiff", testMultiFileDiff)
   ]
 }
