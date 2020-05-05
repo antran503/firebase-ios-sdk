@@ -29,37 +29,72 @@ class GitDiffCommandOutputParser: GitDiffCommandOutputParserProtocol {
   func parseDiff() throws -> Diff {
     if #available(OSX 10.15, *) {
       let scanner = Scanner(string: string)
+      // Don't skip anything.
       scanner.charactersToBeSkipped = nil
-      _ = try scanner.scanUpToPaths()
-      let (oldPath, newPath) = try scanner.scanPaths()
 
-      // Scan to the first chunk diff.
-      var allDiffLines: [FileDiff.Line] = []
-      while let lines = scanner.scanChunkDiffLines() {
-        allDiffLines += lines
+      var files: [File] = []
+      while !scanner.isAtEnd {
+        let file = try scanFileDiff(scanner)
+        files.append(file)
       }
 
-      let file = File(path: newPath, diff: FileDiff(oldPath: oldPath, newPath: newPath, lines: allDiffLines))
-      return Diff(files: [file])
+      return Diff(files: files)
     } else {
       throw GitDiffCommandOutputParser.ParserError.unsupportedOSVersion
     }
+  }
+
+  @available(OSX 10.15, *)
+  private func scanFileDiff(_ scanner: Scanner) throws -> File {
+    // Scan a file header.
+    let (oldPath, newPath) = try scanner.scanPaths()
+
+    // Scan up to a next file header or the diff end to get the file diff content.
+    if let fileDiffString = scanner.scanUpToPaths() {
+      // Scan a file diff with a separate scanner.
+      let fileDiffScanner = Scanner(string: fileDiffString)
+      fileDiffScanner.charactersToBeSkipped = nil
+
+      // Scan diff lines.
+      var allDiffLines: [FileDiff.Line] = []
+      while let lines = fileDiffScanner.scanChunkDiffLines() {
+        allDiffLines += lines
+      }
+
+      let fileDiff = FileDiff(oldPath: oldPath, newPath: newPath, lines: allDiffLines)
+      return File(path: newPath, diff: fileDiff)
+    }
+
+    let fileDiff = FileDiff(oldPath: oldPath, newPath: newPath, lines: [])
+    return File(path: newPath, diff: fileDiff)
   }
 }
 
 @available(OSX 10.15, *)
 private extension Scanner {
-  func scanUpToPaths() throws -> String {
-    let scanLocation = self.scanLocation
-    guard let result = compatibilityScanUpTo("diff --git a/") else {
-      return ""
-    }
+  func scanUpToPaths(resultPrefix: String = "") -> String? {
+    let filePathsPrefix = "diff --git a/"
+    let scanResult = compatibilityScanUpTo(filePathsPrefix)
+    let result = resultPrefix + (scanResult ?? "")
 
     guard !isAtEnd else {
-      throw GitDiffCommandOutputParser.ParserError
-        .diffStartNotFound(searchStartLocation: scanLocation)
+      return result
     }
 
+    let potentialStartLocation = scanLocation
+    let previousIndex = self.string.index(self.string.startIndex, offsetBy: scanLocation - 1)
+
+    guard
+      // Make sure "diff --git a/" is at a line start (not in the middle of a line).
+      self.string[previousIndex] == "\n",
+      let _ = try? scanPaths()
+    else {
+      scanLocation = potentialStartLocation + filePathsPrefix.count
+      return scanUpToPaths(resultPrefix: result + filePathsPrefix)
+    }
+
+    // Set location to
+    scanLocation = potentialStartLocation
     return result
   }
 
@@ -129,22 +164,20 @@ private extension Scanner {
 
   func scanChunkSeparator()
     -> (removed: CountableClosedRange<Int>, added: CountableClosedRange<Int>)? {
-    guard
-      let _ = compatibilityScanString("@@ -"),
-      let firstRemovedLine = scanInt(),
-      let _ = compatibilityScanString(","),
-      let removedLineCount = scanInt(),
-      let _ = compatibilityScanString(" +"),
-      let firstAddedLine = scanInt(),
-      let _ = compatibilityScanString(","),
-      let addedLineCount = scanInt(),
-      let suffix = scanUpToCharacters(from: .newlines),
-      let _ = scanCharacters(from: .newlines)
-    else {
-      return nil
-    }
-    return (firstRemovedLine ... firstRemovedLine + removedLineCount,
-            firstAddedLine ... firstAddedLine + addedLineCount)
+
+      guard let _ = compatibilityScanString("@@ -") else { return nil }
+      guard let firstRemovedLine = scanInt() else { return nil }
+      guard let _ = compatibilityScanString(",") else { return nil }
+      guard let removedLineCount = scanInt() else { return nil }
+      guard let _ = compatibilityScanString(" +") else { return nil }
+      guard let firstAddedLine = scanInt() else { return nil }
+      guard let _ = compatibilityScanString(",") else { return nil }
+      guard let addedLineCount = scanInt() else { return nil }
+      guard let _ = scanUpToCharacters(from: .newlines) else { return nil }
+      guard let _ = scanCharacters(from: .newlines) else { return nil }
+
+      return (firstRemovedLine ... firstRemovedLine + removedLineCount,
+              firstAddedLine ... firstAddedLine + addedLineCount)
   }
 
   func compatibilityScanUpTo(_ substring: String) -> String? {

@@ -54,7 +54,7 @@ final class GitDiffCommandOutputParserTests: XCTestCase {
 
       let diff = try parser.parseDiff()
 
-      XCTAssertEqual(diff.files.count, 8)
+      XCTAssertEqual(diff.files.count, 11)
 
       //        XCTAssertEqual(fileDiff.oldPath, "ZipBuilder/Sources/ZipBuilder/ShellUtils.swift")
       //        XCTAssertEqual(fileDiff.newPath, "ZipBuilder/Sources/ShellUtils/ShellUtils.swift")
@@ -64,9 +64,4 @@ final class GitDiffCommandOutputParserTests: XCTestCase {
       XCTFail("Parse Error: \(error)")
     }
   }
-
-  static var allTests = [
-    ("testSingleFileDiff", testSingleFileDiff),
-    ("testMultiFileDiff", testMultiFileDiff)
-  ]
 }
