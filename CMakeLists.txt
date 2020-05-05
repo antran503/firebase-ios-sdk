@@ -157,8 +157,8 @@ endif()
 
 if(ANDROID OR IOS)
   set(OPENSSL_FOUND FALSE)
-else()
-  find_package(OpenSSL QUIET)
+  #else()
+  #find_package(OpenSSL QUIET)
 endif()
 
 if(OPENSSL_FOUND)

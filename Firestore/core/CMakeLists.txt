@@ -86,7 +86,7 @@ endif()
 
 
 # Choose SecureRandom implementation
-check_symbol_exists(arc4random stdlib.h HAVE_ARC4RANDOM)
+#check_symbol_exists(arc4random stdlib.h HAVE_ARC4RANDOM)
 
 if(TARGET OpenSSL::Crypto)
   get_target_property(
@@ -99,11 +99,13 @@ firebase_ios_glob(
   util_sources EXCLUDE src/util/secure_random_*.cc
 )
 if(HAVE_ARC4RANDOM)
+  message(WARNING "OBC ARC4Rand")
   firebase_ios_glob(
     util_sources APPEND
     src/util/secure_random_arc4random.cc
   )
 elseif(HAVE_OPENSSL_RAND_H)
+  message(WARNING "OBC openssl")
   firebase_ios_glob(
     util_sources APPEND
     src/util/secure_random_openssl.cc
