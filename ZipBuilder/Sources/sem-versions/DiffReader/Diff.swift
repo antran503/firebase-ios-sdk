@@ -18,7 +18,5 @@ import Foundation
 
 /// A diff between two code versions
 struct Diff {
-  var createdFiles: [File]
-  var deletedFiles: [File]
-  var modifiedFiles: [File]
+  var files: [File]
 }

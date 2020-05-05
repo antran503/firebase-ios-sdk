@@ -40,7 +40,7 @@ class GitDiffCommandOutputParser: GitDiffCommandOutputParserProtocol {
       }
 
       let file = File(path: newPath, diff: FileDiff(oldPath: oldPath, newPath: newPath, lines: allDiffLines))
-      return Diff(createdFiles: [], deletedFiles: [], modifiedFiles: [file])
+      return Diff(files: [file])
     } else {
       throw GitDiffCommandOutputParser.ParserError.unsupportedOSVersion
     }
@@ -204,9 +204,9 @@ extension FileDiff.Line {
 
     return diffContent.split(separator: "\n").compactMap { line in
       if line.hasPrefix("+") {
-        return FileDiff.Line(type: .added, content: String(line.suffix(line.count - 2)))
+        return FileDiff.Line(type: .added, content: String(line.suffix(line.count - 1)))
       } else if line.hasPrefix("-") {
-        return FileDiff.Line(type: .removed, content: String(line.suffix(line.count - 2)))
+        return FileDiff.Line(type: .removed, content: String(line.suffix(line.count - 1)))
       } else if line.hasPrefix(" ") {
         return skipUnmodified ? nil : FileDiff
           .Line(type: .unmodified, content: String(line.suffix(line.count - 1)))
