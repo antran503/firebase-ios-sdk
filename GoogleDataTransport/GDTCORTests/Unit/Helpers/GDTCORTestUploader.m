@@ -18,9 +18,11 @@
 
 @implementation GDTCORTestUploader
 
-- (void)uploadTarget:(GDTCORTarget)target withConditions:(GDTCORUploadConditions)conditions {
+- (void)uploadTarget:(GDTCORTarget)target
+      withConditions:(GDTCORUploadConditions)conditions
+          completion:(void (^_Nullable)(void))completion {
   if (self.uploadWithConditionsBlock) {
-    self.uploadWithConditionsBlock(target, conditions);
+    self.uploadWithConditionsBlock(target, conditions, completion);
   }
 }
 

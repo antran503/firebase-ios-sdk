@@ -96,14 +96,20 @@
   XCTestExpectation *responseSentExpectation = [self expectationTestServerSuccessRequestResponse];
 
   // 2. Create uploader and start upload.
-  [self.uploader uploadTarget:kGDTCORTargetTest withConditions:GDTCORUploadConditionWifiData];
+  XCTestExpectation *uploadCompleteExpectation =
+      [self expectationWithDescription:@"uploadCompleteExpectation"];
+  [self.uploader uploadTarget:kGDTCORTargetTest
+               withConditions:GDTCORUploadConditionWifiData
+                   completion:^{
+                     [uploadCompleteExpectation fulfill];
+                   }];
 
   // 3. Wait for operations to complete in the specified order.
   [self waitForExpectations:@[
     self.testStorage.batchIDsForTargetExpectation,
     self.testStorage.removeBatchWithoutDeletingEventsExpectation, hasEventsExpectation,
     self.testStorage.batchWithEventSelectorExpectation, responseSentExpectation,
-    self.testStorage.removeBatchAndDeleteEventsExpectation
+    self.testStorage.removeBatchAndDeleteEventsExpectation, uploadCompleteExpectation
   ]
                     timeout:3
                enforceOrder:YES];
@@ -507,6 +513,9 @@
                                            conditions:GDTCORUploadConditionWifiData
                          shouldWaitForNextRequestTime:YES
                                         expectRequest:YES];
+}
+
+- (void)testUploadTargetRaceCondition_WhenUploadEmptyAndNonEmptyTargets {
 }
 
 //// TODO: Tests for uploading several empty targets and then non-empty target.

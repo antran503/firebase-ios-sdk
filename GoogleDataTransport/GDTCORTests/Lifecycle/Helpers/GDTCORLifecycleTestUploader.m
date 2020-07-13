@@ -18,7 +18,9 @@
 
 @implementation GDTCORLifecycleTestUploader
 
-- (void)uploadTarget:(GDTCORTarget)target withConditions:(GDTCORUploadConditions)conditions {
+- (void)uploadTarget:(GDTCORTarget)target
+      withConditions:(GDTCORUploadConditions)conditions
+          completion:(void (^_Nullable)(void))completion {
 }
 
 @end

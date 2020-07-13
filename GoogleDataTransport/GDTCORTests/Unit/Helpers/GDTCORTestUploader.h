@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /** A block that can be ran in -uploadPackage:. */
 @property(nullable, nonatomic) void (^uploadWithConditionsBlock)
-    (GDTCORTarget target, GDTCORUploadConditions conditions);
+    (GDTCORTarget target, GDTCORUploadConditions conditions, void (^_Nullable completion)(void));
 
 @end
 

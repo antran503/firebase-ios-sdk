@@ -100,7 +100,11 @@
     }
     for (NSNumber *target in targets) {
       id<GDTCORUploader> uploader = self->_registrar.targetToUploader[target];
-      [uploader uploadTarget:target.intValue withConditions:conditions];
+      [uploader uploadTarget:target.intValue
+              withConditions:conditions
+                  completion:^{
+                      // TODO: Impolement
+                  }];
     }
   });
 }

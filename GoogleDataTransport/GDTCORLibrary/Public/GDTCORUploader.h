@@ -52,7 +52,9 @@ typedef NS_OPTIONS(NSInteger, GDTCORUploadConditions) {
  *
  * @param conditions The conditions that the upload attempt is likely to occur under.
  */
-- (void)uploadTarget:(GDTCORTarget)target withConditions:(GDTCORUploadConditions)conditions;
+- (void)uploadTarget:(GDTCORTarget)target
+      withConditions:(GDTCORUploadConditions)conditions
+          completion:(void (^_Nullable)(void))completion;
 
 @end
 

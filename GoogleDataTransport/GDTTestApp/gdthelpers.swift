@@ -29,5 +29,6 @@ class TestUploader: NSObject, GDTCORUploader {
     return false
   }
 
-  func uploadTarget(_ target: GDTCORTarget, with conditions: GDTCORUploadConditions) {}
+  func uploadTarget(_ target: GDTCORTarget, with conditions: GDTCORUploadConditions,
+                    completion: (() -> Void)? = nil) {}
 }

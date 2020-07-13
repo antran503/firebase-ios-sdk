@@ -205,7 +205,9 @@ typedef void (^GDTCCTUploaderEventBatchBlock)(NSNumber *_Nullable batchID,
 
 #
 
-- (void)uploadTarget:(GDTCORTarget)target withConditions:(GDTCORUploadConditions)conditions {
+- (void)uploadTarget:(GDTCORTarget)target
+      withConditions:(GDTCORUploadConditions)conditions
+          completion:(void (^_Nullable)(void))completion {
   __block GDTCORBackgroundIdentifier backgroundTaskID = GDTCORBackgroundIdentifierInvalid;
 
   dispatch_block_t backgroundTaskCompletion = ^{
@@ -244,6 +246,7 @@ typedef void (^GDTCCTUploaderEventBatchBlock)(NSNumber *_Nullable batchID,
                                            @"events were selected",
                                            (long)target);
                             self.isCurrentlyUploading = NO;
+                            completion();
                             backgroundTaskCompletion();
                           });
 
@@ -255,6 +258,7 @@ typedef void (^GDTCCTUploaderEventBatchBlock)(NSNumber *_Nullable batchID,
                                          target:target
                                         storage:storage
                                      completion:^{
+                                       completion();
                                        backgroundTaskCompletion();
                                      }];
                       }];

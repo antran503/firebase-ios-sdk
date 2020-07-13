@@ -72,7 +72,7 @@
 - (void)testForceUploadEvents {
   XCTestExpectation *expectation = [self expectationWithDescription:@"uploader will upload"];
   self.uploader.uploadWithConditionsBlock =
-      ^(GDTCORTarget target, GDTCORUploadConditions conditions) {
+      ^(GDTCORTarget target, GDTCORUploadConditions conditions, dispatch_block_t completion) {
         [expectation fulfill];
       };
   XCTAssertNoThrow(
@@ -84,7 +84,7 @@
 - (void)testTimerIsRunningAtDesiredFrequency {
   __block int numberOfTimesCalled = 0;
   self.uploader.uploadWithConditionsBlock =
-      ^(GDTCORTarget target, GDTCORUploadConditions conditions) {
+      ^(GDTCORTarget target, GDTCORUploadConditions conditions, dispatch_block_t completion) {
         numberOfTimesCalled++;
       };
   dispatch_sync([GDTCORUploadCoordinator sharedInstance].coordinationQueue, ^{
@@ -121,7 +121,7 @@
                     batchID = newBatchID;
                   }];
   self.uploader.uploadWithConditionsBlock =
-      ^(GDTCORTarget target, GDTCORUploadConditions conditions) {
+      ^(GDTCORTarget target, GDTCORUploadConditions conditions, dispatch_block_t completion) {
         [storage removeBatchWithID:batchID deleteEvents:NO onComplete:nil];
         uploadAttempts++;
       };

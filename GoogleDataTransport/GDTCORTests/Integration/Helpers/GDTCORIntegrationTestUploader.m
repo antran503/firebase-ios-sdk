@@ -39,7 +39,9 @@
   return self;
 }
 
-- (void)uploadTarget:(GDTCORTarget)target withConditions:(GDTCORUploadConditions)conditions {
+- (void)uploadTarget:(GDTCORTarget)target
+      withConditions:(GDTCORUploadConditions)conditions
+          completion:(void (^_Nullable)(void))completion {
   __block NSSet<GDTCOREvent *> *eventsForTarget;
   id<GDTCORStorageProtocol> storage = GDTCORStorageInstanceForTarget(target);
   GDTCORStorageEventSelector *eventSelector =
@@ -87,6 +89,7 @@
                                 [storage removeBatchWithID:batchID deleteEvents:YES onComplete:nil];
                               }
                               self->_currentUploadTask = nil;
+                              completion();
                             }];
                     [self->_currentUploadTask resume];
                   }];
