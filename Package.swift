@@ -81,7 +81,7 @@ let package = Package(
       .branch("swift-package-manager")
     ),
     .package(name: "abseil", url: "https://github.com/paulb777/abseil-cpp.git", .revision("6a901b3")),
-    .package(name: "gRPC", url: "https://github.com/paulb777/grpc.git", .revision("31aa24ffd9")),
+    .package(name: "gRPC", url: "https://github.com/paulb777/grpc.git", .revision("9fcce7b88b")),
     .package(name: "OCMock", url: "https://github.com/paulb777/ocmock.git", .revision("7291762")),
     .package(name: "leveldb", url: "https://github.com/paulb777/leveldb.git", .revision("3f04697")),
     // Branches need a force update with a run with the revision set like below.
@@ -395,7 +395,7 @@ let package = Package(
         "leveldb",
         "nanopb",
         .product(name:"abseil", package: "abseil"),
-        .product(name: "gRPC", package: "gRPC"),
+        .product(name: "gRPC-cpp", package: "gRPC"),
       ],
       path: "Firestore",
       exclude: [
@@ -418,6 +418,7 @@ let package = Package(
         "Protos/nanopb_cpp_generator.py",
         "Protos/lib/pretty_printing.py",
         "core/CMakeLists.txt",
+        "core/src/util/config.h.in",
       ],
       sources: [
         "Source/",
@@ -440,6 +441,8 @@ let package = Package(
         .define("PB_NO_PACKED_STRUCTS", to: "1"),
         .define("PB_ENABLE_MALLOC", to: "1"),
         .define("FIRFirestore_VERSION", to: "0.0.1"), // TODO: Fix version
+        .define("HAVE_ARC4RANDOM", to: "1"), // TODO get from config.h?
+        .define("HAVE_LIBDISPATCH", to: "1"), // TODO get from config.h?
       ]
     ),
 
