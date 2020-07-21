@@ -162,4 +162,23 @@ static NSString *const kMethodNameLatestStartTime =
       latestExperimentStartTimestampBetweenTimestamp:existingLastStartTime
                                          andPayloads:_experimentPayloads];
 }
+
+- (void)validateRunningExperimentsWithResponse:(NSArray<NSDictionary<NSString *, id> *> *)response {
+  NSMutableArray *allRunningExperimentPayloads = [[NSMutableArray alloc] init];
+  for (NSDictionary<NSString *, id> *experiment in response) {
+    NSError *error;
+    NSData *JSONPayload = [NSJSONSerialization dataWithJSONObject:experiment
+                                                          options:kNilOptions
+                                                            error:&error];
+    if (!JSONPayload || error) {
+      FIRLogError(kFIRLoggerRemoteConfig, @"I-RCN000030",
+                  @"Invalid experiment payload to be serialized.");
+    } else {
+      [allRunningExperimentPayloads addObject:[ABTExperimentPayload parseFromData:JSONPayload]];
+    }
+  }
+  [self.experimentController
+      validateRunningExperimentsForServiceOrigin:kServiceOrigin
+                       runningExperimentPayloads:allRunningExperimentPayloads];
+}
 @end

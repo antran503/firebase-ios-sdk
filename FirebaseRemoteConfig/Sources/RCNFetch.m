@@ -469,6 +469,9 @@ static const NSInteger sFIRErrorCodeConfigFailed = -114;
         // Update experiments.
         [strongSelf->_experiment
             updateExperimentsWithResponse:fetchedConfig[RCNFetchResponseKeyExperimentDescriptions]];
+        // Validate running experiments.
+        [strongSelf->_experiment validateRunningExperimentsWithResponse:
+                                     fetchedConfig[RCNFetchResponseKeyAllActiveExperiments]];
       } else {
         FIRLogDebug(kFIRLoggerRemoteConfig, @"I-RCN000063",
                     @"Empty response with no fetched config.");

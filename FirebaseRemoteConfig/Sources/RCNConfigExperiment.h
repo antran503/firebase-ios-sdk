@@ -34,4 +34,7 @@
 
 /// Update experiments to Firebase Analytics when activateFetched happens.
 - (void)updateExperiments;
+
+/// Validate running experiment information from config fetch response.
+- (void)validateRunningExperimentsWithResponse:(NSArray<NSDictionary<NSString *, id> *> *)response;
 @end
