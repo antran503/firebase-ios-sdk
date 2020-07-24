@@ -54,7 +54,11 @@
 - (void)testNothingSet {
   self.fakeApp.isDefaultCollectionEnabled = YES;
   FIRCLSDataCollectionArbiter *arbiter = [self arbiterWithDictionary:@{}];
+  // copybara:strip_begin(github)
   XCTAssertTrue([arbiter isCrashlyticsCollectionEnabled]);
+  // copybara:strip_end_and_replace_begin
+  XCTAssertFalse([arbiter isCrashlyticsCollectionEnabled]);
+  // copybara:replace_end
 }
 
 - (void)testOnlyStickyOff {
