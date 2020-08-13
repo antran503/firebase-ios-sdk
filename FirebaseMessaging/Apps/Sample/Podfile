@@ -1,4 +1,7 @@
-use_frameworks!
+#use_frameworks!
+use_frameworks! :linkage => :static
+
+
 
 source 'https://github.com/firebase/SpecsStaging.git'
 source 'https://cdn.cocoapods.org/'
@@ -15,3 +18,18 @@ target 'Sample' do
   pod 'FirebaseInstallations', :path => '../../../'
 
 end
+
+target 'MyAppClip' do
+  platform :ios, '13.0'
+
+  pod 'FirebaseCore', :path => '../../../'
+  pod 'GoogleUtilities', :path => '../../../'
+  pod 'FirebaseMessaging', :path => '../../../'
+  pod 'FirebaseInstanceID', :path => '../../../'
+  pod 'FirebaseCoreDiagnostics', :path => '../../../'
+  pod 'GoogleDataTransport', :path => '../../../'
+  pod 'FirebaseInstallations', :path => '../../../'
+
+end
+
+

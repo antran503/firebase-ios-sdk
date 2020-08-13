@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 51;
+	objectVersion = 50;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -14,12 +14,42 @@
 		5125CCA62437F472006CA5D0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5125CCA52437F472006CA5D0 /* Assets.xcassets */; };
 		5125CCA92437F472006CA5D0 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5125CCA82437F472006CA5D0 /* Preview Assets.xcassets */; };
 		5125CCAC2437F472006CA5D0 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5125CCAA2437F472006CA5D0 /* LaunchScreen.storyboard */; };
-		5126B5F0244F87D800C5A2CD /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5126B5EF244F87D800C5A2CD /* GoogleService-Info.plist */; };
 		513771F2243BE5DE004503C3 /* Identity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513771F1243BE5DE004503C3 /* Identity.swift */; };
+		516814A824E34117005F315C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516814A724E34117005F315C /* AppDelegate.swift */; };
+		516814AA24E34117005F315C /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516814A924E34117005F315C /* SceneDelegate.swift */; };
+		516814AC24E34117005F315C /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516814AB24E34117005F315C /* ViewController.swift */; };
+		516814AF24E34117005F315C /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 516814AD24E34117005F315C /* Main.storyboard */; };
+		516814B124E34118005F315C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 516814B024E34118005F315C /* Assets.xcassets */; };
+		516814B424E34118005F315C /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 516814B224E34118005F315C /* LaunchScreen.storyboard */; };
+		516814B924E34118005F315C /* MyAppClip.app in Embed App Clips */ = {isa = PBXBuildFile; fileRef = 516814A524E34117005F315C /* MyAppClip.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		51C544FB2457A86E0093D292 /* TopicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C544FA2457A86E0093D292 /* TopicView.swift */; };
 		51C545122458E9A60093D292 /* logo.png in Resources */ = {isa = PBXBuildFile; fileRef = 51C545112458E9A60093D292 /* logo.png */; };
 		51D4B021244684B4001A87BB /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51D4B020244684B4001A87BB /* UserSettings.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		516814B724E34118005F315C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5125CC912437F471006CA5D0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 516814A424E34117005F315C;
+			remoteInfo = MyAppClip;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		516814BA24E34118005F315C /* Embed App Clips */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/AppClips";
+			dstSubfolderSpec = 16;
+			files = (
+				516814B924E34118005F315C /* MyAppClip.app in Embed App Clips */,
+			);
+			name = "Embed App Clips";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		5125CC992437F471006CA5D0 /* Sample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sample.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -32,8 +62,17 @@
 		5125CCAB2437F472006CA5D0 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		5125CCAD2437F472006CA5D0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5125CCB32437F9A9006CA5D0 /* Sample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Sample.entitlements; sourceTree = "<group>"; };
-		5126B5EF244F87D800C5A2CD /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		513771F1243BE5DE004503C3 /* Identity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Identity.swift; sourceTree = "<group>"; };
+		516814A524E34117005F315C /* MyAppClip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyAppClip.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		516814A724E34117005F315C /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		516814A924E34117005F315C /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		516814AB24E34117005F315C /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		516814AE24E34117005F315C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		516814B024E34118005F315C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		516814B324E34118005F315C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		516814B524E34118005F315C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		516814B624E34118005F315C /* MyAppClip.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MyAppClip.entitlements; sourceTree = "<group>"; };
+		516814BE24E35FB4005F315C /* MyAppClipDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MyAppClipDebug.entitlements; sourceTree = "<group>"; };
 		51C544FA2457A86E0093D292 /* TopicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicView.swift; sourceTree = "<group>"; };
 		51C545112458E9A60093D292 /* logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = logo.png; sourceTree = "<group>"; };
 		51D4B020244684B4001A87BB /* UserSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSettings.swift; sourceTree = "<group>"; };
@@ -41,6 +80,13 @@
 
 /* Begin PBXFrameworksBuildPhase section */
 		5125CC962437F471006CA5D0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		516814A224E34117005F315C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -61,6 +107,7 @@
 			isa = PBXGroup;
 			children = (
 				5125CC9B2437F471006CA5D0 /* Sample */,
+				516814A624E34117005F315C /* MyAppClip */,
 				5125CC9A2437F471006CA5D0 /* Products */,
 				06211DE6118DB67F2425BF9B /* Pods */,
 			);
@@ -70,6 +117,7 @@
 			isa = PBXGroup;
 			children = (
 				5125CC992437F471006CA5D0 /* Sample.app */,
+				516814A524E34117005F315C /* MyAppClip.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -77,7 +125,6 @@
 		5125CC9B2437F471006CA5D0 /* Sample */ = {
 			isa = PBXGroup;
 			children = (
-				5126B5EF244F87D800C5A2CD /* GoogleService-Info.plist */,
 				5125CCB32437F9A9006CA5D0 /* Sample.entitlements */,
 				5125CC9C2437F471006CA5D0 /* AppDelegate.swift */,
 				5125CC9E2437F471006CA5D0 /* SceneDelegate.swift */,
@@ -103,6 +150,22 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
+		516814A624E34117005F315C /* MyAppClip */ = {
+			isa = PBXGroup;
+			children = (
+				516814BE24E35FB4005F315C /* MyAppClipDebug.entitlements */,
+				516814A724E34117005F315C /* AppDelegate.swift */,
+				516814A924E34117005F315C /* SceneDelegate.swift */,
+				516814AB24E34117005F315C /* ViewController.swift */,
+				516814AD24E34117005F315C /* Main.storyboard */,
+				516814B024E34118005F315C /* Assets.xcassets */,
+				516814B224E34118005F315C /* LaunchScreen.storyboard */,
+				516814B524E34118005F315C /* Info.plist */,
+				516814B624E34118005F315C /* MyAppClip.entitlements */,
+			);
+			path = MyAppClip;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -113,15 +176,34 @@
 				5125CC952437F471006CA5D0 /* Sources */,
 				5125CC962437F471006CA5D0 /* Frameworks */,
 				5125CC972437F471006CA5D0 /* Resources */,
+				516814BA24E34118005F315C /* Embed App Clips */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				516814B824E34118005F315C /* PBXTargetDependency */,
 			);
 			name = Sample;
 			productName = Sample;
 			productReference = 5125CC992437F471006CA5D0 /* Sample.app */;
 			productType = "com.apple.product-type.application";
+		};
+		516814A424E34117005F315C /* MyAppClip */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 516814BD24E34118005F315C /* Build configuration list for PBXNativeTarget "MyAppClip" */;
+			buildPhases = (
+				516814A124E34117005F315C /* Sources */,
+				516814A224E34117005F315C /* Frameworks */,
+				516814A324E34117005F315C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MyAppClip;
+			productName = MyAppClip;
+			productReference = 516814A524E34117005F315C /* MyAppClip.app */;
+			productType = "com.apple.product-type.application.on-demand-install-capable";
 		};
 /* End PBXNativeTarget section */
 
@@ -129,12 +211,15 @@
 		5125CC912437F471006CA5D0 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 1120;
+				LastSwiftUpdateCheck = 1200;
 				LastUpgradeCheck = 1120;
 				ORGANIZATIONNAME = "Google, Inc";
 				TargetAttributes = {
 					5125CC982437F471006CA5D0 = {
 						CreatedOnToolsVersion = 11.2.1;
+					};
+					516814A424E34117005F315C = {
+						CreatedOnToolsVersion = 12.0;
 					};
 				};
 			};
@@ -152,6 +237,7 @@
 			projectRoot = "";
 			targets = (
 				5125CC982437F471006CA5D0 /* Sample */,
+				516814A424E34117005F315C /* MyAppClip */,
 			);
 		};
 /* End PBXProject section */
@@ -163,9 +249,18 @@
 			files = (
 				51C545122458E9A60093D292 /* logo.png in Resources */,
 				5125CCAC2437F472006CA5D0 /* LaunchScreen.storyboard in Resources */,
-				5126B5F0244F87D800C5A2CD /* GoogleService-Info.plist in Resources */,
 				5125CCA92437F472006CA5D0 /* Preview Assets.xcassets in Resources */,
 				5125CCA62437F472006CA5D0 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		516814A324E34117005F315C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				516814B424E34118005F315C /* LaunchScreen.storyboard in Resources */,
+				516814B124E34118005F315C /* Assets.xcassets in Resources */,
+				516814AF24E34117005F315C /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -186,13 +281,47 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		516814A124E34117005F315C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				516814AC24E34117005F315C /* ViewController.swift in Sources */,
+				516814A824E34117005F315C /* AppDelegate.swift in Sources */,
+				516814AA24E34117005F315C /* SceneDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		516814B824E34118005F315C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 516814A424E34117005F315C /* MyAppClip */;
+			targetProxy = 516814B724E34118005F315C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		5125CCAA2437F472006CA5D0 /* LaunchScreen.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
 				5125CCAB2437F472006CA5D0 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		516814AD24E34117005F315C /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				516814AE24E34117005F315C /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		516814B224E34118005F315C /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				516814B324E34118005F315C /* Base */,
 			);
 			name = LaunchScreen.storyboard;
 			sourceTree = "<group>";
@@ -317,6 +446,7 @@
 		5125CCB12437F472006CA5D0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sample/Sample.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
@@ -340,6 +470,7 @@
 		5125CCB22437F472006CA5D0 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sample/Sample.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
@@ -355,6 +486,53 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.firebase.extensions.dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Firebase iOS App Extensions Dev";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		516814BB24E34118005F315C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_ENTITLEMENTS = MyAppClip/MyAppClipDebug.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = EQHXZ8M8AV;
+				INFOPLIST_FILE = MyAppClip/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.google.firebase.extensions.dev.clip;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Firebase iOS App Extensions Clip Dev";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		516814BC24E34118005F315C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CODE_SIGN_ENTITLEMENTS = MyAppClip/MyAppClip.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = EQHXZ8M8AV;
+				INFOPLIST_FILE = MyAppClip/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.google.firebase.extensions.dev.Clip;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -377,6 +555,15 @@
 			buildConfigurations = (
 				5125CCB12437F472006CA5D0 /* Debug */,
 				5125CCB22437F472006CA5D0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		516814BD24E34118005F315C /* Build configuration list for PBXNativeTarget "MyAppClip" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				516814BB24E34118005F315C /* Debug */,
+				516814BC24E34118005F315C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
