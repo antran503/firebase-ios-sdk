@@ -11,7 +11,7 @@ import FirebaseCore
 import FirebaseMessaging
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
 
 
 
@@ -21,15 +21,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
     let center = UNUserNotificationCenter.current()
     center.delegate = self
-
-    center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-      if error != nil {
-        print("Failed requesting notification permission: ", error ?? "")
+    center.getNotificationSettings { (settings) in
+      if settings.authorizationStatus == .ephemeral {
+        print("the permission is ephemeral")
+      } else {
+//        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+//          if error != nil {
+//            print("Failed requesting notification permission: ", error ?? "")
+//          }
+//        }
+//        application.registerForRemoteNotifications()
       }
+
     }
-    application.registerForRemoteNotifications()
+
+
     print("token", Messaging.messaging().fcmToken ?? "")
     return true
+  }
+  
+  func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String) {
+    print("token", Messaging.messaging().fcmToken ?? "")
   }
 
   // MARK: UISceneSession Lifecycle
