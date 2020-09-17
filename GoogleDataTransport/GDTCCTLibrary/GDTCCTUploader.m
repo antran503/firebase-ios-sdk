@@ -16,6 +16,8 @@
 
 #import "GoogleDataTransport/GDTCCTLibrary/Private/GDTCCTUploader.h"
 
+#import <FBLPromises/FBLPromises.h>
+
 #import "GoogleDataTransport/GDTCORLibrary/Public/GoogleDataTransport/GDTCORConsoleLogger.h"
 #import "GoogleDataTransport/GDTCORLibrary/Public/GoogleDataTransport/GDTCOREvent.h"
 #import "GoogleDataTransport/GDTCORLibrary/Public/GoogleDataTransport/GDTCORPlatform.h"
@@ -486,6 +488,28 @@ typedef void (^GDTCCTUploaderEventBatchBlock)(NSNumber *_Nullable batchID,
                   }];
 }
 
+- (FBLPromise<NSNull *> *)removeBatchesForTarget:(GDTCORTarget)target
+                                         storage:(id<GDTCORStorageProtocol>)storage {
+  return [FBLPromise onQueue:self.uploaderQueue
+             wrapObjectCompletion:^(FBLPromiseObjectCompletion _Nonnull handler) {
+               [storage batchIDsForTarget:target onComplete:handler];
+             }]
+      .thenOn(self.uploaderQueue, ^id(NSSet<NSNumber *> *batchIDs) {
+        NSMutableArray<FBLPromise *> *removeBatchPromises =
+            [NSMutableArray arrayWithCapacity:batchIDs.count];
+        for (NSNumber *batchID in batchIDs) {
+          [removeBatchPromises addObject:[self removeBatchWithID:batchID
+                                                    deleteEvents:NO
+                                                         storage:storage]];
+        }
+
+        return [FBLPromise onQueue:self.uploaderQueue all:[removeBatchPromises copy]];
+      })
+  .thenOn(self.uploaderQueue, ^id(NSSet<NSNumber *> *batchIDs) {
+    return [FBLPromise resolvedWith:[NSNull null]];
+  });
+}
+
 #pragma mark - Private helper methods
 
 /** */
@@ -709,6 +733,18 @@ typedef void (^GDTCCTUploaderEventBatchBlock)(NSNumber *_Nullable batchID,
   } else {
     completionHandler(request);
   }
+}
+
+// TODO: This should be moved to a separate file or merged with the storage interface.
+#pragma mark - Storage Promise Helpers
+
+- (FBLPromise<NSNull *> *)removeBatchWithID:(NSNumber *)batchID
+                               deleteEvents:(BOOL)deleteEvents
+                                    storage:(id<GDTCORStorageProtocol>)storage {
+  return [FBLPromise onQueue:self.uploaderQueue
+              wrapCompletion:^(FBLPromiseCompletion _Nonnull handler) {
+                [storage removeBatchWithID:batchID deleteEvents:deleteEvents onComplete:handler];
+              }];
 }
 
 @end
