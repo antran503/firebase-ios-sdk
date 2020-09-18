@@ -234,7 +234,7 @@ typedef void (^GDTCCTUploaderEventBatchBlock)(NSNumber *_Nullable batchID,
                 }];
 
   dispatch_async(_uploaderQueue, ^{
-    id<GDTCORStorageProtocol> storage = GDTCORStorageInstanceForTarget(target);
+    id<GDTCORStoragePromiseProtocol> storage = GDTCORStoragePromiseInstanceForTarget(target);
 
     // 1. Fetch events to upload.
     [self batchToUploadForTarget:target
@@ -396,7 +396,7 @@ typedef void (^GDTCCTUploaderEventBatchBlock)(NSNumber *_Nullable batchID,
 /** Fetches a batch of pending events for the specified target and conditions. Passes `nil` to
  * completion if there are no suitable events to upload. */
 - (void)batchToUploadForTarget:(GDTCORTarget)target
-                       storage:(id<GDTCORStorageProtocol>)storage
+                       storage:(id<GDTCORStoragePromiseProtocol>)storage
                     conditions:(GDTCORUploadConditions)conditions
                     completion:(GDTCCTUploaderEventBatchBlock)completion {
   // 1. Check if the conditions for the target are suitable.
@@ -406,29 +406,29 @@ typedef void (^GDTCCTUploaderEventBatchBlock)(NSNumber *_Nullable batchID,
   }
 
   // 2. Remove previously attempted batches
-  [self removeBatchesForTarget:target
-                       storage:storage
-                    onComplete:^{
-                      // There may be a big amount of events stored, so creating a batch may be an
-                      // expensive operation.
+  [storage removeAllBatchesForTarget:target deleteEvents:NO].thenOn(
+      self.uploaderQueue, ^id(id result) {
+        // There may be a big amount of events stored, so creating a batch may be an
+        // expensive operation.
 
-                      // 3. Do a lightweight check if there are any events for the target first to
-                      // finish early if there are no.
-                      [storage hasEventsForTarget:target
-                                       onComplete:^(BOOL hasEvents) {
-                                         // 4. Proceed with fetching the events.
-                                         [self batchToUploadForTarget:target
-                                                              storage:storage
-                                                           conditions:conditions
-                                                            hasEvents:hasEvents
-                                                           completion:completion];
-                                       }];
-                    }];
+        // 3. Do a lightweight check if there are any events for the target first to
+        // finish early if there are no.
+        [storage hasEventsForTarget:target
+                         onComplete:^(BOOL hasEvents) {
+                           // 4. Proceed with fetching the events.
+                           [self batchToUploadForTarget:target
+                                                storage:storage
+                                             conditions:conditions
+                                              hasEvents:hasEvents
+                                             completion:completion];
+                         }];
+        return nil;
+      });
 }
 
 /** Makes final checks before and makes */
 - (void)batchToUploadForTarget:(GDTCORTarget)target
-                       storage:(id<GDTCORStorageProtocol>)storage
+                       storage:(id<GDTCORStoragePromiseProtocol>)storage
                     conditions:(GDTCORUploadConditions)conditions
                      hasEvents:(BOOL)hasEvents
                     completion:(GDTCCTUploaderEventBatchBlock)completion {
@@ -455,58 +455,6 @@ typedef void (^GDTCCTUploaderEventBatchBlock)(NSNumber *_Nullable batchID,
     [storage batchWithEventSelector:eventSelector
                     batchExpiration:[NSDate dateWithTimeIntervalSinceNow:600]
                          onComplete:completion];
-  });
-}
-
-- (void)removeBatchesForTarget:(GDTCORTarget)target
-                       storage:(id<GDTCORStorageProtocol>)storage
-                    onComplete:(dispatch_block_t)onComplete {
-  [storage batchIDsForTarget:target
-                  onComplete:^(NSSet<NSNumber *> *_Nullable batchIDs) {
-                    // No stored batches, no need to remove anything.
-                    if (batchIDs.count < 1) {
-                      onComplete();
-                      return;
-                    }
-
-                    dispatch_group_t dispatchGroup = dispatch_group_create();
-                    for (NSNumber *batchID in batchIDs) {
-                      dispatch_group_enter(dispatchGroup);
-
-                      // Remove batches and moves events back to the storage.
-                      [storage removeBatchWithID:batchID
-                                    deleteEvents:NO
-                                      onComplete:^{
-                                        dispatch_group_leave(dispatchGroup);
-                                      }];
-                    }
-
-                    // Wait until all batches are removed and call completion handler.
-                    dispatch_group_notify(dispatchGroup, self.uploaderQueue, ^{
-                      onComplete();
-                    });
-                  }];
-}
-
-- (FBLPromise<NSNull *> *)removeBatchesForTarget:(GDTCORTarget)target
-                                         storage:(id<GDTCORStorageProtocol>)storage {
-  return [FBLPromise onQueue:self.uploaderQueue
-             wrapObjectCompletion:^(FBLPromiseObjectCompletion _Nonnull handler) {
-               [storage batchIDsForTarget:target onComplete:handler];
-             }]
-      .thenOn(self.uploaderQueue, ^id(NSSet<NSNumber *> *batchIDs) {
-        NSMutableArray<FBLPromise *> *removeBatchPromises =
-            [NSMutableArray arrayWithCapacity:batchIDs.count];
-        for (NSNumber *batchID in batchIDs) {
-          [removeBatchPromises addObject:[self removeBatchWithID:batchID
-                                                    deleteEvents:NO
-                                                         storage:storage]];
-        }
-
-        return [FBLPromise onQueue:self.uploaderQueue all:[removeBatchPromises copy]];
-      })
-  .thenOn(self.uploaderQueue, ^id(NSSet<NSNumber *> *batchIDs) {
-    return [FBLPromise resolvedWith:[NSNull null]];
   });
 }
 
@@ -661,7 +609,7 @@ typedef void (^GDTCCTUploaderEventBatchBlock)(NSNumber *_Nullable batchID,
 /** */
 - (nullable GDTCORStorageEventSelector *)eventSelectorTarget:(GDTCORTarget)target
                                               withConditions:(GDTCORUploadConditions)conditions {
-  id<GDTCORStorageProtocol> storage = GDTCORStorageInstanceForTarget(target);
+  id<GDTCORStorageProtocol> storage = GDTCORStoragePromiseInstanceForTarget(target);
   if ((conditions & GDTCORUploadConditionHighPriority) == GDTCORUploadConditionHighPriority) {
     return [GDTCORStorageEventSelector eventSelectorForTarget:target];
   }
@@ -733,18 +681,6 @@ typedef void (^GDTCCTUploaderEventBatchBlock)(NSNumber *_Nullable batchID,
   } else {
     completionHandler(request);
   }
-}
-
-// TODO: This should be moved to a separate file or merged with the storage interface.
-#pragma mark - Storage Promise Helpers
-
-- (FBLPromise<NSNull *> *)removeBatchWithID:(NSNumber *)batchID
-                               deleteEvents:(BOOL)deleteEvents
-                                    storage:(id<GDTCORStorageProtocol>)storage {
-  return [FBLPromise onQueue:self.uploaderQueue
-              wrapCompletion:^(FBLPromiseCompletion _Nonnull handler) {
-                [storage removeBatchWithID:batchID deleteEvents:deleteEvents onComplete:handler];
-              }];
 }
 
 @end

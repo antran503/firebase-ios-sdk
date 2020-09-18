@@ -25,4 +25,26 @@
               }];
 }
 
+- (FBLPromise<NSNull *> *)removeBatchesWithIDs:(NSSet<NSNumber *> *)batchIDs
+                                  deleteEvents:(BOOL)deleteEvents {
+  NSMutableArray<FBLPromise *> *removeBatchPromises =
+      [NSMutableArray arrayWithCapacity:batchIDs.count];
+  for (NSNumber *batchID in batchIDs) {
+    [removeBatchPromises addObject:[self removeBatchWithID:batchID deleteEvents:deleteEvents]];
+  }
+
+  return [FBLPromise onQueue:self.storageQueue all:[removeBatchPromises copy]].thenOn(
+      self.storageQueue, ^id(id result) {
+        return [FBLPromise resolvedWith:[NSNull null]];
+      });
+}
+
+- (FBLPromise<NSNull *> *)removeAllBatchesForTarget:(GDTCORTarget)target
+                                       deleteEvents:(BOOL)deleteEvents {
+  return
+      [self batchIDsForTarget:target].thenOn(self.storageQueue, ^id(NSSet<NSNumber *> *batchIDs) {
+        return [self removeBatchesWithIDs:batchIDs deleteEvents:NO];
+      });
+}
+
 @end

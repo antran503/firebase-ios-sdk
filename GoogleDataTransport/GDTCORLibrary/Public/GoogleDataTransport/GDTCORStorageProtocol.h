@@ -22,6 +22,7 @@
 
 @class GDTCOREvent;
 @class GDTCORClock;
+@class FBLPromise<ValueType>;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -120,6 +121,20 @@ typedef void (^GDTCORStorageBatchBlock)(NSNumber *_Nullable newBatchID,
 
 @end
 
+@protocol GDTCORStoragePromiseProtocol <GDTCORStorageProtocol>
+
+- (FBLPromise<NSSet<NSNumber *> *> *)batchIDsForTarget:(GDTCORTarget)target;
+
+- (FBLPromise<NSNull *> *)removeBatchWithID:(NSNumber *)batchID deleteEvents:(BOOL)deleteEvents;
+
+- (FBLPromise<NSNull *> *)removeBatchesWithIDs:(NSSet<NSNumber *> *)batchIDs
+                                  deleteEvents:(BOOL)deleteEvents;
+
+- (FBLPromise<NSNull *> *)removeAllBatchesForTarget:(GDTCORTarget)target
+                                       deleteEvents:(BOOL)deleteEvents;
+
+@end
+
 /** Retrieves the storage instance for the given target.
  *
  * @param target The target.
@@ -127,5 +142,11 @@ typedef void (^GDTCORStorageBatchBlock)(NSNumber *_Nullable newBatchID,
  */
 FOUNDATION_EXPORT
 id<GDTCORStorageProtocol> _Nullable GDTCORStorageInstanceForTarget(GDTCORTarget target);
+
+// TODO: Ideally we should remove completion-based API and use promise-based one. Need to double
+// check if it's ok.
+FOUNDATION_EXPORT
+id<GDTCORStoragePromiseProtocol> _Nullable GDTCORStoragePromiseInstanceForTarget(
+    GDTCORTarget target);
 
 NS_ASSUME_NONNULL_END
