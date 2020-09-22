@@ -9,6 +9,8 @@
 
 #import <FBLPromises/FBLPromises.h>
 
+#import "GoogleDataTransport/GDTCORLibrary/Private/GDTCORUploadBatch.h"
+
 @implementation GDTCORFlatFileStorage (Promises)
 
 - (FBLPromise<NSSet<NSNumber *> *> *)batchIDsForTarget:(GDTCORTarget)target {
@@ -45,6 +47,29 @@
       [self batchIDsForTarget:target].thenOn(self.storageQueue, ^id(NSSet<NSNumber *> *batchIDs) {
         return [self removeBatchesWithIDs:batchIDs deleteEvents:NO];
       });
+}
+
+- (FBLPromise<NSNumber *> *)hasEventsForTarget:(GDTCORTarget)target {
+  return [FBLPromise onQueue:self.storageQueue wrapBoolCompletion:^(FBLPromiseBoolCompletion  _Nonnull handler) {
+    [self hasEventsForTarget:target onComplete:handler];
+  }];
+}
+
+- (FBLPromise<GDTCORUploadBatch *> *)batchWithEventSelector:(GDTCORStorageEventSelector *)eventSelector
+                                            batchExpiration:(NSDate *)expiration {
+  return [FBLPromise onQueue:self.storageQueue async:^(FBLPromiseFulfillBlock  _Nonnull fulfill, FBLPromiseRejectBlock  _Nonnull reject) {
+    [self batchWithEventSelector:eventSelector batchExpiration:expiration onComplete:^(NSNumber * _Nullable newBatchID, NSSet<GDTCOREvent *> * _Nullable batchEvents) {
+      if (newBatchID == nil || batchEvents == nil) {
+        reject([self genericRejectedPromiseErrorWithReason:@"There are no events for the selector."]);
+      } else {
+        fulfill([[GDTCORUploadBatch alloc] initWithBatchID:newBatchID events:batchEvents]);
+      }
+    }];
+  }];
+}
+
+- (NSError *)genericRejectedPromiseErrorWithReason:(NSString *)reason {
+  return [NSError errorWithDomain:@"GDTCORFlatFileStorage" code:-1 userInfo:@{ NSLocalizedFailureReasonErrorKey : reason }];
 }
 
 @end

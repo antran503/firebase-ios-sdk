@@ -22,6 +22,8 @@
 
 @class GDTCOREvent;
 @class GDTCORClock;
+@class GDTCORUploadBatch;
+
 @class FBLPromise<ValueType>;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -132,6 +134,11 @@ typedef void (^GDTCORStorageBatchBlock)(NSNumber *_Nullable newBatchID,
 
 - (FBLPromise<NSNull *> *)removeAllBatchesForTarget:(GDTCORTarget)target
                                        deleteEvents:(BOOL)deleteEvents;
+
+- (FBLPromise<NSNumber *> *)hasEventsForTarget:(GDTCORTarget)target;
+
+- (FBLPromise<GDTCORUploadBatch *> *)batchWithEventSelector:(GDTCORStorageEventSelector *)eventSelector
+               batchExpiration:(NSDate *)expiration;
 
 @end
 
