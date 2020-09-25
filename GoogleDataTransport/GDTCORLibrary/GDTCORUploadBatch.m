@@ -5,7 +5,7 @@
 //  Created by Maksym Malyhin on 2020-09-18.
 //
 
-#import "GDTCORUploadBatch.h"
+#import "GoogleDataTransport/GDTCORLibrary/Private/GDTCORUploadBatch.h"
 
 @implementation GDTCORUploadBatch
 
