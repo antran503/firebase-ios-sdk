@@ -14,31 +14,40 @@
 
 #import <XCTest/XCTest.h>
 
-#import "SEGContentManager.h"
-#import "SEGDatabaseManager.h"
-#import "SEGNetworkManager.h"
+#import "FirebaseSegmentation/Sources/SEGContentManager.h"
+#import "FirebaseSegmentation/Sources/SEGDatabaseManager.h"
+#import "FirebaseSegmentation/Sources/SEGNetworkManager.h"
 
-#import <FirebaseCore/FirebaseCore.h>
-#import <FirebaseInstanceID/FIRInstanceID.h>
 #import <OCMock/OCMock.h>
+#import "FirebaseCore/Sources/Public/FirebaseCore/FirebaseCore.h"
+#import "FirebaseInstallations/Source/Library/InstallationsIDController/FIRInstallationsIDController.h"
+#import "FirebaseInstallations/Source/Library/Public/FirebaseInstallations/FirebaseInstallations.h"
 
 @interface SEGContentManager (ForTest)
 - (instancetype)initWithDatabaseManager:databaseManager networkManager:networkManager;
 @end
 
-@interface FIRInstanceIDResult (ForTest)
-@property(nonatomic, readwrite) NSString *instanceID;
-@property(nonatomic, readwrite) NSString *token;
+@interface FIRInstallations (Tests)
+@property(nonatomic, readwrite, strong) FIROptions *appOptions;
+@property(nonatomic, readwrite, strong) NSString *appName;
+
+- (instancetype)initWithAppOptions:(FIROptions *)appOptions
+                           appName:(NSString *)appName
+         installationsIDController:(FIRInstallationsIDController *)installationsIDController
+                 prefetchAuthToken:(BOOL)prefetchAuthToken;
 @end
 
-@interface FIRInstanceID (ForTest)
-+ (instancetype)instanceIDForTests;
+@interface FIRInstallationsAuthTokenResult (ForTest)
+- (instancetype)initWithToken:(NSString *)token expirationDate:(NSDate *)expirationTime;
 @end
 
 @interface SEGContentManagerTests : XCTestCase
 @property(nonatomic) SEGContentManager *contentManager;
-@property(nonatomic) id instanceIDMock;
 @property(nonatomic) id networkManagerMock;
+@property(nonatomic) id mockIDController;
+@property(nonatomic) FIROptions *appOptions;
+@property(readonly) NSString *firebaseAppName;
+@property(strong, readonly, nonatomic) id mockInstallations;
 
 @end
 
@@ -46,14 +55,20 @@
 
 - (void)setUp {
   // Setup FIRApp.
-  XCTAssertNoThrow([FIRApp configureWithOptions:[self FIRAppOptions]]);
-  // TODO (mandard): Investigate replacing the partial mock with a class mock.
-  self.instanceIDMock = OCMPartialMock([FIRInstanceID instanceIDForTests]);
-  FIRInstanceIDResult *result = [[FIRInstanceIDResult alloc] init];
-  result.instanceID = @"test-instance-id";
-  result.token = @"test-instance-id-token";
-  OCMStub([self.instanceIDMock
-      instanceIDWithHandler:([OCMArg invokeBlockWithArgs:result, [NSNull null], nil])]);
+  _firebaseAppName = @"my-firebase-app-id";
+  XCTAssertNoThrow([FIRApp configureWithName:self.firebaseAppName options:[self FIRAppOptions]]);
+
+  // Installations Mock
+  NSString *FID = @"fid-is-better-than-iid";
+  _mockInstallations = OCMClassMock([FIRInstallations class]);
+  OCMStub([_mockInstallations installationsWithApp:[FIRApp appNamed:self.firebaseAppName]])
+      .andReturn(_mockInstallations);
+  FIRInstallationsAuthTokenResult *FISToken =
+      [[FIRInstallationsAuthTokenResult alloc] initWithToken:@"fake-fis-token" expirationDate:nil];
+  OCMStub([_mockInstallations
+      installationIDWithCompletion:([OCMArg invokeBlockWithArgs:FID, [NSNull null], nil])]);
+  OCMStub([_mockInstallations
+      authTokenWithCompletion:([OCMArg invokeBlockWithArgs:FISToken, [NSNull null], nil])]);
 
   // Mock the network manager.
   FIROptions *options = [[FIROptions alloc] init];
@@ -75,9 +90,8 @@
 - (void)tearDown {
   [self.networkManagerMock stopMocking];
   self.networkManagerMock = nil;
-  [self.instanceIDMock stopMocking];
-  self.instanceIDMock = nil;
   self.contentManager = nil;
+  self.mockIDController = nil;
 }
 
 // Associate a fake custom installation id and fake firebase installation id.
@@ -87,7 +101,7 @@
       [self expectationWithDescription:@"associateCustomInstallation for contentmanager"];
   [_contentManager
       associateCustomInstallationIdentiferNamed:@"my-custom-id"
-                                    firebaseApp:@"my-firebase-app-id"
+                                    firebaseApp:self.firebaseAppName
                                      completion:^(BOOL success, NSDictionary *result) {
                                        XCTAssertTrue(success,
                                                      @"Could not associate custom installation ID");
@@ -101,7 +115,7 @@
 - (FIROptions *)FIRAppOptions {
   FIROptions *options = [[FIROptions alloc] initWithGoogleAppID:@"1:123:ios:123abc"
                                                     GCMSenderID:@"correct_gcm_sender_id"];
-  options.APIKey = @"correct_api_key";
+  options.APIKey = @"AIzaSaaaaaaaaaaaaaaaaaaaaaaaaaaa1111111";
   options.projectID = @"abc-xyz-123";
   return options;
 }

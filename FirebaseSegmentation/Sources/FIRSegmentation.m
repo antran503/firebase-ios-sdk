@@ -14,10 +14,10 @@
 
 #import "FirebaseSegmentation/Sources/Public/FIRSegmentation.h"
 
-#import <FirebaseCore/FIRAppInternal.h>
-#import <FirebaseCore/FIRComponentContainer.h>
-#import <FirebaseCore/FIRLogger.h>
-#import <FirebaseCore/FIROptionsInternal.h>
+#import "FirebaseCore/Sources/Private/FIRComponentContainer.h"
+#import "FirebaseCore/Sources/Private/FIRLogger.h"
+#import "FirebaseCore/Sources/Private/FIROptionsInternal.h"
+#import "FirebaseCore/Sources/Private/FirebaseCoreInternal.h"
 #import "FirebaseSegmentation/Sources/Private/FIRSegmentationComponent.h"
 #import "FirebaseSegmentation/Sources/SEGContentManager.h"
 
@@ -36,7 +36,7 @@
 }
 
 + (nonnull FIRSegmentation *)segmentationWithApp:(nonnull FIRApp *)firebaseApp {
-  // Use the provider to generate and return instances of FIRRemoteConfig for this specific app and
+  // Use the provider to generate and return instances of FIRSegmentation for this specific app and
   // namespace. This will ensure the app is configured before Remote Config can return an instance.
   id<FIRSegmentationProvider> provider =
       FIR_COMPONENT(FIRSegmentationProvider, firebaseApp.container);
