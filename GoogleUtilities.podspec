@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
-  s.name             = 'GoogleUtilities'
-  s.version          = '6.7.2'
+  s.name             = 'PaulTestBeta'
+  s.version          = '1.0.0-beta'
   s.summary          = 'Google Utilities for iOS (plus community support for macOS and tvOS)'
 
   s.description      = <<-DESC
@@ -14,7 +14,7 @@ other Google CocoaPods. They're not intended for direct public usage.
 
   s.source           = {
     :git => 'https://github.com/firebase/firebase-ios-sdk.git',
-    :tag => 'Utilities-' + s.version.to_s
+    :tag => 'BetaTest-' + s.version.to_s
   }
 
   s.ios.deployment_target = '9.0'
