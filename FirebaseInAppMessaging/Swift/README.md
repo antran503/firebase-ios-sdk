@@ -1,4 +1,4 @@
-# Firebase In-App Messaging Swift Extensions
+# Firebase In-App Messaging SwiftUI Extensions
 
 This directory contains source files for the In-App Messaging SwiftUI extensions SDK.
 
@@ -30,6 +30,6 @@ TODO(eggyeggbean)
 
 ## License
 
-The Firestore Swift Extensions SDK is available under the Apache-2 license. See
+The Firebase In-App Messaging SwiftUI Extensions SDK is available under the Apache-2 license. See
 the top-level LICENSE file for more details.
 
