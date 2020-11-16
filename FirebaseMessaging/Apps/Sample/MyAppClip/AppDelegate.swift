@@ -25,12 +25,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
       if settings.authorizationStatus == .ephemeral {
         print("the permission is ephemeral")
       } else {
-//        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-//          if error != nil {
-//            print("Failed requesting notification permission: ", error ?? "")
-//          }
-//        }
-//        application.registerForRemoteNotifications()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+          if error != nil {
+            print("Failed requesting notification permission: ", error ?? "")
+          }
+        }
+        DispatchQueue.main.async {
+          application.registerForRemoteNotifications()
+          print("requested permission for remote notifications")
+        }
       }
 
     }
