@@ -12,13 +12,34 @@ import FirebaseRemoteConfig
 var remoteConfig: RemoteConfig!
 
 struct ContentView: View {
+  @State var paramName: String = ""
+
     public init() {
         remoteConfig = RemoteConfig.remoteConfig()
     }
     
     var body: some View {
-        Button(action: fetchRemoteConfig) {
-            Text("Fetch")
+        VStack() {
+          Text("Remote Config").bold().padding()
+          Divider()
+          Form {
+            TextField("Parameter Name", text: $paramName)
+            Button(action: fetchRemoteConfig) {
+              Text("Get").frame(maxWidth:.infinity)
+            }
+          }
+          HStack(alignment: .center, spacing: 10) {
+            Button(action: fetchRemoteConfig) {
+              Text("Fetch").frame(maxWidth:.infinity)
+            }
+            Button(action: activateRemoteConfig) {
+              Text("Activate").frame(maxWidth:.infinity)
+            }
+          }.padding()
+          HStack(alignment: .center, spacing: 10) {
+            Text("fetchTime").frame(maxWidth:.infinity)
+            Text("activateTime").frame(maxWidth:.infinity)
+          }.padding([.horizontal, .bottom])
         }
     }
 }
@@ -38,3 +59,5 @@ func fetchRemoteConfig() -> Void {
         }
     }
 }
+
+func activateRemoteConfig() -> Void {}
