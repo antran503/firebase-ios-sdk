@@ -39,7 +39,7 @@ struct ContentView: View {
           HStack(alignment: .center, spacing: 10) {
             Text("fetchTime").frame(maxWidth:.infinity)
             Text("activateTime").frame(maxWidth:.infinity)
-          }.padding([.horizontal, .bottom])
+          }.padding([.leading, .bottom, .trailing])
         }
     }
 }
@@ -60,4 +60,14 @@ func fetchRemoteConfig() -> Void {
     }
 }
 
-func activateRemoteConfig() -> Void {}
+func activateRemoteConfig() -> Void {
+    remoteConfig.activate() { (activated, error) -> Void in
+        if activated {
+            print("Activated updated config")
+        } else if error == nil  {
+            print("Did not activate config")
+        } else {
+            print("Activate error:", error?.localizedDescription ?? "No error available.")
+        }
+    }
+}
