@@ -10,64 +10,90 @@ import SwiftUI
 import FirebaseRemoteConfig
 
 var remoteConfig: RemoteConfig!
+var dateFormatter: DateFormatter!
 
 struct ContentView: View {
   @State var paramName: String = ""
+  @State var output: String = "No output"
+  @State var fetchTime: Date?
+  @State var activateTime: Date?
 
-    public init() {
-        remoteConfig = RemoteConfig.remoteConfig()
-    }
-    
-    var body: some View {
-        VStack() {
-          Text("Remote Config").bold().padding()
-          Divider()
-          Form {
-            TextField("Parameter Name", text: $paramName)
-            Button(action: fetchRemoteConfig) {
-              Text("Get").frame(maxWidth:.infinity)
-            }
-          }
-          HStack(alignment: .center, spacing: 10) {
-            Button(action: fetchRemoteConfig) {
-              Text("Fetch").frame(maxWidth:.infinity)
-            }
-            Button(action: activateRemoteConfig) {
-              Text("Activate").frame(maxWidth:.infinity)
-            }
-          }.padding()
-          HStack(alignment: .center, spacing: 10) {
-            Text("fetchTime").frame(maxWidth:.infinity)
-            Text("activateTime").frame(maxWidth:.infinity)
-          }.padding([.leading, .bottom, .trailing])
+  public init() {
+    remoteConfig = RemoteConfig.remoteConfig()
+    dateFormatter = DateFormatter()
+    dateFormatter.timeStyle = .medium
+  }
+
+  var body: some View {
+    VStack(alignment: .center, spacing: 10) {
+      Text("Remote Config").bold().padding()
+      Form {
+        TextField("Parameter Name", text: $paramName)
+        Button(action: fetchRemoteConfig) {
+          Text("Get").frame(maxWidth: .infinity)
         }
+      }
+      ScrollView {
+        Text(output)
+          .fixedSize(horizontal: false, vertical: true)
+          .frame(maxWidth: .infinity, alignment: .leading)
+      }.padding()
+      Divider()
+      HStack(alignment: .center, spacing: 10) {
+        Button(action: fetchRemoteConfig) {
+          Text("Fetch").frame(maxWidth: .infinity)
+        }
+        Button(action: activateRemoteConfig) {
+          Text("Activate").frame(maxWidth: .infinity)
+        }
+      }.padding()
+      HStack(alignment: .center, spacing: 10) {
+        Text("Last fetched:\n" +
+          (fetchTime != nil ? dateFormatter.string(from: fetchTime!) : "-"))
+          .frame(maxWidth: .infinity)
+          .multilineTextAlignment(.center)
+        Text("Last activated:\n" +
+          (activateTime != nil ? dateFormatter.string(from: activateTime!) : "-"))
+          .frame(maxWidth: .infinity)
+          .multilineTextAlignment(.center)
+      }.padding([.horizontal, .bottom])
     }
+  }
+
+  func fetchRemoteConfig() {
+    remoteConfig.fetch { (status, error) -> Void in
+      var message: String
+      if status == .success {
+        message = "Fetched successfully"
+        self.fetchTime = Date()
+
+      } else {
+        message = "Fetch error: \(error?.localizedDescription ?? "No error available.")"
+      }
+      print(message)
+      self.output = message
+    }
+  }
+
+  func activateRemoteConfig() {
+    remoteConfig.activate { (activated, error) -> Void in
+      var message: String
+      if activated {
+        message = "Activated updated config"
+        self.activateTime = Date()
+      } else if error == nil {
+        message = "No change in config"
+      } else {
+        message = "Activate error: \(error?.localizedDescription ?? "No error available")"
+      }
+      print(message)
+      self.output = message
+    }
+  }
 }
 
 struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
-    }
-}
-
-func fetchRemoteConfig() -> Void {
-    remoteConfig.fetch() { (status, error) -> Void in
-        if status == .success {
-            print("Fetched successfully")
-        } else {
-            print("Fetch error:", error?.localizedDescription ?? "No error available.")
-        }
-    }
-}
-
-func activateRemoteConfig() -> Void {
-    remoteConfig.activate() { (activated, error) -> Void in
-        if activated {
-            print("Activated updated config")
-        } else if error == nil  {
-            print("Did not activate config")
-        } else {
-            print("Activate error:", error?.localizedDescription ?? "No error available.")
-        }
-    }
+  static var previews: some View {
+    ContentView()
+  }
 }
