@@ -14,7 +14,7 @@ var dateFormatter: DateFormatter!
 
 struct ContentView: View {
   @State var paramName: String = ""
-  @State var output: String = "No output"
+  @State var output: String = ""
   @State var fetchTime: Date?
   @State var activateTime: Date?
 
@@ -25,43 +25,54 @@ struct ContentView: View {
   }
 
   var body: some View {
-    VStack(alignment: .center, spacing: 10) {
+    VStack {
       Text("Remote Config").bold().padding()
-      Form {
-        TextField("Parameter Name", text: $paramName)
-        Button(action: fetchRemoteConfig) {
-          Text("Get").frame(maxWidth: .infinity)
-        }
+      VStack(alignment: .center, spacing: 0) {
+        ScrollView {
+          Text(output)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .lineSpacing(5)
+            .font(.system(size: 14))
+            .padding()
+        }.background(Color(UIColor.systemGray6).edgesIgnoringSafeArea(.all))
+        Button(action: { self.output = "" }) {
+          Text("Clear logs")
+            .font(.system(size: 14))
+        }.frame(maxWidth: .infinity).padding().background(Color(UIColor.systemGray6))
       }
-      ScrollView {
-        Text(output)
-          .fixedSize(horizontal: false, vertical: true)
-          .frame(maxWidth: .infinity, alignment: .leading)
-      }.padding()
-      Divider()
-      HStack(alignment: .center, spacing: 10) {
-        Button(action: fetchRemoteConfig) {
-          Text("Fetch").frame(maxWidth: .infinity)
-        }
-        Button(action: activateRemoteConfig) {
-          Text("Activate").frame(maxWidth: .infinity)
-        }
-      }.padding()
-      HStack(alignment: .center, spacing: 10) {
-        Text("Last fetched:\n" +
-          (fetchTime != nil ? dateFormatter.string(from: fetchTime!) : "-"))
-          .frame(maxWidth: .infinity)
-          .multilineTextAlignment(.center)
-        Text("Last activated:\n" +
-          (activateTime != nil ? dateFormatter.string(from: activateTime!) : "-"))
-          .frame(maxWidth: .infinity)
-          .multilineTextAlignment(.center)
-      }.padding([.horizontal, .bottom])
+      VStack(alignment: .center) {
+        HStack {
+          TextField("Parameter Name", text: $paramName).autocapitalization(.none)
+          Button(action: getParameter) {
+            Text("Get").padding()
+          }
+        }.padding([.horizontal])
+        Divider()
+        HStack(alignment: .center, spacing: 10) {
+          Button(action: fetchRemoteConfig) {
+            Text("Fetch").frame(maxWidth: .infinity)
+          }
+          Button(action: activateRemoteConfig) {
+            Text("Activate").frame(maxWidth: .infinity)
+          }
+        }.padding()
+        HStack(alignment: .center, spacing: 10) {
+          Text("Last fetched:\n" +
+            (fetchTime != nil ? dateFormatter.string(from: fetchTime!) : "-"))
+            .frame(maxWidth: .infinity)
+            .multilineTextAlignment(.center)
+          Text("Last activated:\n" +
+            (activateTime != nil ? dateFormatter.string(from: activateTime!) : "-"))
+            .frame(maxWidth: .infinity)
+            .multilineTextAlignment(.center)
+        }.padding().background(Color(UIColor.systemGray6))
+      }
     }
   }
 
   func fetchRemoteConfig() {
-    remoteConfig.fetch { (status, error) -> Void in
+    remoteConfig.fetch(withExpirationDuration: 0) { (status, error) -> Void in
       var message: String
       if status == .success {
         message = "Fetched successfully"
@@ -71,7 +82,7 @@ struct ContentView: View {
         message = "Fetch error: \(error?.localizedDescription ?? "No error available.")"
       }
       print(message)
-      self.output = message
+      self.log(message)
     }
   }
 
@@ -87,7 +98,31 @@ struct ContentView: View {
         message = "Activate error: \(error?.localizedDescription ?? "No error available")"
       }
       print(message)
-      self.output = message
+      self.log(message)
+    }
+  }
+
+  func getParameter() {
+    let value = remoteConfig.configValue(forKey: paramName)
+    log("Getting parameter: \"\(paramName)\"")
+    log("Value: \"\(value.stringValue ?? "")\"")
+    log("Source: \(getSourceName(value.source))")
+  }
+
+  func log(_ message: String) {
+    output += "[\(dateFormatter.string(from: Date()))] \(message)\n"
+  }
+
+  func getSourceName(_ source: RemoteConfigSource) -> String {
+    switch source {
+    case RemoteConfigSource.static:
+      return "STATIC"
+    case RemoteConfigSource.default:
+      return "DEFAULT"
+    case RemoteConfigSource.remote:
+      return "REMOTE"
+    default:
+      return "UNKNOWN"
     }
   }
 }
