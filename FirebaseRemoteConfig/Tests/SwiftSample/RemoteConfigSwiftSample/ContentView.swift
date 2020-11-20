@@ -9,12 +9,21 @@
 import SwiftUI
 import FirebaseRemoteConfig
 
+enum ValueType: String, Identifiable {
+  case string
+  case boolean
+  case int
+
+  var id: String { rawValue }
+}
+
 var remoteConfig: RemoteConfig!
 var dateFormatter: DateFormatter!
 
 struct ContentView: View {
   @State var paramName: String = ""
-  @State var output: String = ""
+  @State var valueType: ValueType = ValueType.string
+  @State var output: [String] = []
   @State var fetchTime: Date?
   @State var activateTime: Date?
 
@@ -29,21 +38,38 @@ struct ContentView: View {
       Text("Remote Config").bold().padding()
       VStack(alignment: .center, spacing: 0) {
         ScrollView {
-          Text(output)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .lineSpacing(5)
-            .font(.system(size: 14))
-            .padding()
+          ScrollViewReader { scrollView in
+            VStack(spacing: 0) {
+              ForEach(self.output.indices, id: \.self) { i in
+                Text(self.output[i])
+                  .frame(maxWidth: .infinity, alignment: .leading)
+                  .font(.system(size: 14, design: .monospaced))
+                  .id(i)
+              }.onAppear {
+                withAnimation { scrollView.scrollTo(self.output.count - 1) }
+              }
+            }.fixedSize(horizontal: false, vertical: true).padding()
+
+            if self.output.count == 0 {
+              HStack {
+                Spacer()
+              }
+            }
+          }
         }.background(Color(UIColor.systemGray6).edgesIgnoringSafeArea(.all))
-        Button(action: { self.output = "" }) {
+        Button(action: { self.output = [] }) {
           Text("Clear logs")
             .font(.system(size: 14))
         }.frame(maxWidth: .infinity).padding().background(Color(UIColor.systemGray6))
-      }
+      }.zIndex(1)
       VStack(alignment: .center) {
         HStack {
           TextField("Parameter Name", text: $paramName).autocapitalization(.none)
+          Picker("ValueType", selection: $valueType) {
+            Text("String").tag(ValueType.string).font(.system(size: 14))
+            Text("Boolean").tag(ValueType.boolean).font(.system(size: 14))
+            Text("Int").tag(ValueType.int).font(.system(size: 14))
+          }.frame(width: 80, height: 60).clipped()
           Button(action: getParameter) {
             Text("Get").padding()
           }
@@ -60,10 +86,12 @@ struct ContentView: View {
         HStack(alignment: .center, spacing: 10) {
           Text("Last fetched:\n" +
             (fetchTime != nil ? dateFormatter.string(from: fetchTime!) : "-"))
+            .foregroundColor(Color.gray)
             .frame(maxWidth: .infinity)
             .multilineTextAlignment(.center)
           Text("Last activated:\n" +
             (activateTime != nil ? dateFormatter.string(from: activateTime!) : "-"))
+            .foregroundColor(Color.gray)
             .frame(maxWidth: .infinity)
             .multilineTextAlignment(.center)
         }.padding().background(Color(UIColor.systemGray6))
@@ -104,13 +132,20 @@ struct ContentView: View {
 
   func getParameter() {
     let value = remoteConfig.configValue(forKey: paramName)
-    log("Getting parameter: \"\(paramName)\"")
-    log("Value: \"\(value.stringValue ?? "")\"")
+    log("Parameter: \"\(paramName)\"")
+    switch valueType {
+    case ValueType.string:
+      log("Value(String): \"\(value.stringValue ?? "")\"")
+    case ValueType.boolean:
+      log("Value(Bool): \(String(value.boolValue))")
+    case ValueType.int:
+      log("Value(Int): \(value.numberValue.stringValue)")
+    }
     log("Source: \(getSourceName(value.source))")
   }
 
   func log(_ message: String) {
-    output += "[\(dateFormatter.string(from: Date()))] \(message)\n"
+    output.append("[\(dateFormatter.string(from: Date()))] \(message)\n")
   }
 
   func getSourceName(_ source: RemoteConfigSource) -> String {
