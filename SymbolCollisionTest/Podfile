@@ -27,7 +27,7 @@ target 'SymbolCollisionTest' do
     pod 'Firebase/MLCommon', :path => '../'
     pod 'Firebase/MLModelInterpreter', :path => '../'
     pod 'Firebase/MLVision', :path => '../'
-    pod 'FirebasePerformance'
+    pod 'FirebasePerformance', :path => '../'
     pod 'FirebaseRemoteConfig', :path => '../'
     pod 'FirebaseStorage', :path => '../'
     pod 'GoogleDataTransport', :path => '../'
@@ -54,8 +54,7 @@ target 'SymbolCollisionTest' do
     pod 'GoogleInterchangeUtilities'
     pod 'GoogleMaps'
 
-# https://github.com/firebase/firebase-ios-sdk/issues/6655
-#    pod 'GoogleMLKit'
+    pod 'GoogleMLKit'
 #    pod 'GoogleMobileVision' # After Firebase 6.8.0, conflicts with FirebaseML
     pod 'GoogleNetworkingUtilities'
     pod 'GoogleParsingUtilities'

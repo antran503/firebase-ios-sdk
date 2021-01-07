@@ -76,10 +76,19 @@ struct ModuleMapBuilder {
   /// Dictionary of installed pods required for this module.
   private var installedPods: [String: FrameworkInfo]
 
+  /// The platform for this build.
+  private let platform: Platform
+
+  /// The path containing local podspec URLs, if specified.
+  private let localPodspecPath: URL?
+
   /// Default initializer.
-  init(customSpecRepos: [URL]?, selectedPods: [String: CocoaPodUtils.PodInfo]) {
+  init(customSpecRepos: [URL]?,
+       selectedPods: [String: CocoaPodUtils.PodInfo],
+       platform: Platform,
+       paths: ZipBuilder.FilesystemPaths) {
     projectDir = FileManager.default.temporaryDirectory(withName: "module")
-    CocoaPodUtils.podInstallPrepare(inProjectDir: projectDir)
+    CocoaPodUtils.podInstallPrepare(inProjectDir: projectDir, templateDir: paths.templateDir)
 
     self.customSpecRepos = customSpecRepos
     allPods = selectedPods
@@ -92,6 +101,9 @@ struct ModuleMapBuilder {
                                              subspecs: pod.value.subspecs)
     }
     self.installedPods = installedPods
+
+    self.platform = platform
+    localPodspecPath = paths.localPodspecPath
   }
 
   // MARK: - Public Functions
@@ -100,7 +112,9 @@ struct ModuleMapBuilder {
   ///
   func build() {
     for (_, info) in installedPods {
-      if info.isSourcePod == false || info.transitiveFrameworks != nil {
+      if info.isSourcePod == false ||
+        info.transitiveFrameworks != nil ||
+        info.versionedPod.name == "Firebase" {
         continue
       }
       generate(framework: info)
@@ -117,8 +131,10 @@ struct ModuleMapBuilder {
     let deps = CocoaPodUtils.transitiveVersionedPodDependencies(for: podName, in: allPods)
     _ = CocoaPodUtils.installPods(allSubspecList(framework: framework) + deps,
                                   inDir: projectDir,
+                                  platform: platform,
                                   customSpecRepos: customSpecRepos,
-                                  forceStaticLibs: true)
+                                  localPodspecPath: localPodspecPath,
+                                  linkage: .forcedStatic)
     let xcconfigFile = projectDir.appendingPathComponents(["Pods", "Target Support Files",
                                                            "Pods-FrameworkMaker",
                                                            "Pods-FrameworkMaker.release.xcconfig"])
