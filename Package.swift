@@ -720,6 +720,7 @@ let package = Package(
       name: "GoogleDataTransport",
       dependencies: [
         .product(name: "nanopb", package: "nanopb"),
+        "GoogleUtilities_Environment",
       ],
       path: "GoogleDataTransport",
       exclude: [

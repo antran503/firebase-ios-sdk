@@ -20,12 +20,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-// TODO: Try to avoid NDEBUG as it is not covered by tests on CI.
-#if !NDEBUG
-/** A notification fired when uploading is complete, detailing the number of events uploaded. */
-extern NSNotificationName const GDTCCTUploadCompleteNotification;
-#endif  // #if !NDEBUG
-
 /** Class capable of uploading events to the CCT backend. */
 @interface GDTCCTUploader : NSObject <GDTCORUploader>
 
@@ -39,7 +33,10 @@ extern NSNotificationName const GDTCCTUploadCompleteNotification;
 /** An upload URL used across all targets. For testing only. */
 @property(class, nullable, nonatomic) NSURL *testServerURL;
 
-- (void)waitForUploadFinished:(dispatch_block_t)completion;
+/** Spins runloop until upload finishes or timeout.
+ *  @return YES if upload finishes, NO in the case of timeout.
+ */
+- (BOOL)waitForUploadFinishedWithTimeout:(NSTimeInterval)timeout;
 
 #endif  // !NDEBUG
 

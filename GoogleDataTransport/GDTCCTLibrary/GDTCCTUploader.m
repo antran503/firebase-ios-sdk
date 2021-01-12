@@ -26,14 +26,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-#if !NDEBUG
-NSNotificationName const GDTCCTUploadCompleteNotification = @"com.GDTCCTUploader.UploadComplete";
-#endif  // #if !NDEBUG
-
 @interface GDTCCTUploader () <NSURLSessionDelegate, GDTCCTUploadMetadataProvider>
 
 @property(nonatomic, readonly) NSOperationQueue *uploadOperationQueue;
 @property(nonatomic, readonly) dispatch_queue_t uploadQueue;
+
+@property(nonatomic, readonly)
+    NSMutableDictionary<NSNumber * /*GDTCORTarget*/, GDTCORClock *> *nextUploadTimeByTarget;
 
 @end
 
@@ -64,6 +63,7 @@ static NSURL *_testServerURL = nil;
     _uploadQueue = dispatch_queue_create("com.google.GDTCCTUploader", DISPATCH_QUEUE_SERIAL);
     _uploadOperationQueue = [[NSOperationQueue alloc] init];
     _uploadOperationQueue.maxConcurrentOperationCount = 1;
+    _nextUploadTimeByTarget = [[NSMutableDictionary alloc] init];
   }
   return self;
 }
@@ -97,31 +97,24 @@ static NSURL *_testServerURL = nil;
                                             storage:storage
                                    metadataProvider:self];
 
+  GDTCORLogDebug(@"Upload operation created: %@, target: %@", uploadOperation, @(target));
+
   __weak __auto_type weakSelf = self;
   __weak GDTCCTUploadOperation *weakOperation = uploadOperation;
   uploadOperation.completionBlock = ^{
+    GDTCORLogDebug(@"Upload operation finished: %@, uploadAttempted: %@", weakOperation,
+                   @(weakOperation.uploadAttempted));
+
     // TODO: Strongify references?
     if (weakOperation.uploadAttempted) {
       // Ignore all upload requests received when the upload was in progress.
       [weakSelf.uploadOperationQueue cancelAllOperations];
-
-      // TODO: Should we reconsider GDTCCTUploadCompleteNotification? Maybe a completion handler
-      // instead?
-#if !NDEBUG
-      [[NSNotificationCenter defaultCenter] postNotificationName:GDTCCTUploadCompleteNotification
-                                                          object:nil];
-#endif  // #if !NDEBUG
     }
-
-#if !NDEBUG
-    if (weakSelf.uploadOperationQueue.operationCount == 0) {
-      [[NSNotificationCenter defaultCenter] postNotificationName:GDTCCTUploadCompleteNotification
-                                                          object:nil];
-    }
-#endif  // #if !NDEBUG
   };
 
   [self.uploadOperationQueue addOperation:uploadOperation];
+  GDTCORLogDebug(@"Upload operation scheduled: %@, operation count: %@", uploadOperation,
+                 @(self.uploadOperationQueue.operationCount));
 }
 
 #pragma mark - URLs
@@ -163,12 +156,16 @@ static NSURL *_testServerURL = nil;
 
 #pragma mark - GDTCCTUploadMetadataProvider
 
-// TODO: Implement
 - (nullable GDTCORClock *)nextUploadTimeForTarget:(GDTCORTarget)target {
-  return nil;
+  @synchronized(self.nextUploadTimeByTarget) {
+    return self.nextUploadTimeByTarget[@(target)];
+  }
 }
 
 - (void)setNextUploadTime:(nullable GDTCORClock *)time forTarget:(GDTCORTarget)target {
+  @synchronized(self.nextUploadTimeByTarget) {
+    self.nextUploadTimeByTarget[@(target)] = time;
+  }
 }
 
 - (nullable NSString *)APIKeyForTarget:(GDTCORTarget)target {
@@ -185,8 +182,19 @@ static NSURL *_testServerURL = nil;
 
 #if !NDEBUG
 
-- (void)waitForUploadFinished:(dispatch_block_t)completion {
-  [self.uploadOperationQueue addOperationWithBlock:completion];
+- (BOOL)waitForUploadFinishedWithTimeout:(NSTimeInterval)timeout {
+  NSDate *expirationDate = [NSDate dateWithTimeIntervalSinceNow:timeout];
+  while ([expirationDate compare:[NSDate date]] == NSOrderedDescending) {
+    if (self.uploadOperationQueue.operationCount == 0) {
+      return YES;
+    } else {
+      [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+    }
+  }
+
+  GDTCORLogDebug(@"Uploader wait for finish timeout exceeded. Operations still in queue: %@",
+                 self.uploadOperationQueue.operations);
+  return NO;
 }
 
 #endif  // !NDEBUG

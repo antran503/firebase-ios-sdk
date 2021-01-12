@@ -65,9 +65,11 @@
 }
 
 - (void)tearDown {
+  [self.uploader waitForUploadFinishedWithTimeout:1];
   self.testServer.responseCompletedBlock = nil;
   [self.testServer stop];
   self.testStorage = nil;
+  self.uploader = nil;
   [super tearDown];
 }
 
@@ -567,15 +569,7 @@
 }
 
 - (void)waitForUploadOperationsToFinish:(GDTCCTUploader *)uploader {
-  // TODO: Revisit.
-  XCTestExpectation *uploadFinishedExpectation =
-      [self expectationWithDescription:@"uploadFinishedExpectation"];
-
-  [self.uploader waitForUploadFinished:^{
-    [uploadFinishedExpectation fulfill];
-  }];
-
-  [self waitForExpectations:@[ uploadFinishedExpectation ] timeout:1];
+  XCTAssert([self.uploader waitForUploadFinishedWithTimeout:1]);
 }
 
 - (XCTestExpectation *)expectStorageHasEventsForTarget:(GDTCORTarget)expectedTarget
