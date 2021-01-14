@@ -9,11 +9,9 @@ pod 'FirebaseCoreDiagnostics', :path => '../../../..'
 pod 'GoogleDataTransport', :path => '../../../..'
 pod 'GoogleUtilities', :path => '../../../..'
 pod 'FirebaseABTesting', :path => '../../../..'
+pod 'FirebaseInAppMessaging', :path => '../../../..'
 
-target 'InAppMessaging_Example_iOS' do
-  platform :ios, '9.0'
-
-  pod 'FirebaseInAppMessaging', :path => '../../../..'
-  pod 'FirebaseDynamicLinks',  :path => '../../../..'
-
+target 'CustomSwiftUI' do
+  platform :ios, '14.0'
+  pod 'FirebaseInAppMessagingSwift', :path => '../../../..'
 end
