@@ -14,30 +14,23 @@ struct InAppMessagingDisplayModifier<DisplayMessage: View>: ViewModifier {
   }
 }
 
-class DelegateBridge: InAppMessagingDisplay, InAppMessagingDisplayDelegate, ObservableObject {
+class DelegateBridge: InAppMessagingDisplay, ObservableObject {
   @Published var inAppMessage: InAppMessagingDisplayMessage? = nil
 
   init() {
     InAppMessaging.inAppMessaging().messageDisplayComponent = self
-    InAppMessaging.inAppMessaging().delegate = self
   }
 
   func displayMessage(_ messageForDisplay: InAppMessagingDisplayMessage,
                       displayDelegate: InAppMessagingDisplayDelegate) {
-    print("FIRFIRFIR Here's a message")
     DispatchQueue.main.async {
       self.inAppMessage = messageForDisplay
     }
   }
-  
-  func messageDismissed(_ inAppMessage: InAppMessagingDisplayMessage,
-                        dismissType: FIRInAppMessagingDismissType) {
-    inAppMessage = nil
-  }
 }
 
 public extension View {
-  func onIAM<T: View>(closure: @escaping (InAppMessagingDisplayMessage) -> T) -> some View {
+  func onInAppMessage<T: View>(closure: @escaping (InAppMessagingDisplayMessage) -> T) -> some View {
     modifier(InAppMessagingDisplayModifier(closure: closure))
   }
 }
