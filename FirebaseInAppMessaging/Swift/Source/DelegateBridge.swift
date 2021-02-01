@@ -30,7 +30,7 @@ class DelegateBridge: InAppMessagingDisplay, ObservableObject {
 }
 
 public extension View {
-  func onInAppMessage<T: View>(closure: @escaping (InAppMessagingDisplayMessage) -> T) -> some View {
+  func onDisplayInAppMessage<T: View>(closure: @escaping (InAppMessagingDisplayMessage) -> T) -> some View {
     modifier(InAppMessagingDisplayModifier(closure: closure))
   }
 }
