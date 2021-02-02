@@ -19,7 +19,7 @@ struct CustomSwiftUIApp: App {
   
     var body: some Scene {
         WindowGroup {
-          ContentView().onInAppMessage { (message) in
+          ContentView().onDisplayInAppMessage { (message, delegate) in
             ZStack {
               RoundedRectangle(cornerRadius: 8.0).stroke(lineWidth: 2.0)
               VStack {
@@ -38,7 +38,19 @@ struct CustomSwiftUIApp: App {
                   .lineLimit(nil)
                   .fixedSize(horizontal: false, vertical: true)
                   .padding(20)
+                Button(action: {
+                  delegate.messageClicked!(message, with: InAppMessagingAction(actionText: (message as! InAppMessagingModalDisplay).actionButton!.buttonText, actionURL: (message as! InAppMessagingModalDisplay).actionURL))
+                }, label: {
+                  Text("Go to google.com")
+                }).padding(10)
+                Button(action: {
+                  delegate.messageDismissed!(message, dismissType: .typeUserTapClose)
+                }, label: {
+                  Text("Dismiss")
+                }).padding(10)
               }
+            }.onAppear {
+              delegate.impressionDetected!(for: message)
             }
           }
         }

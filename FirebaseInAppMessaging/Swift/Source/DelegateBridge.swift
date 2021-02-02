@@ -3,19 +3,19 @@ import SwiftUI
 
 // Handle delegate for FIAM actions.
 struct InAppMessagingDisplayModifier<DisplayMessage: View>: ViewModifier {
-  var closure: (InAppMessagingDisplayMessage) -> DisplayMessage
-  // @State var inAppMessage: InAppMessagingDisplayMessage?
+  var closure: (InAppMessagingDisplayMessage, InAppMessagingDisplayDelegate) -> DisplayMessage
+  
   @ObservedObject var delegateBridge: DelegateBridge = DelegateBridge()
 
   func body(content: Content) -> some View {
     let inAppMessage = delegateBridge.inAppMessage
     return content
-      .overlay(inAppMessage == nil ? AnyView(EmptyView()) : AnyView(closure(inAppMessage!)))
+      .overlay(inAppMessage == nil ? AnyView(EmptyView()) : AnyView(closure(inAppMessage!.0, inAppMessage!.1)))
   }
 }
 
 class DelegateBridge: InAppMessagingDisplay, ObservableObject {
-  @Published var inAppMessage: InAppMessagingDisplayMessage? = nil
+  @Published var inAppMessage: (InAppMessagingDisplayMessage, InAppMessagingDisplayDelegate)?  = nil
 
   init() {
     InAppMessaging.inAppMessaging().messageDisplayComponent = self
@@ -24,13 +24,14 @@ class DelegateBridge: InAppMessagingDisplay, ObservableObject {
   func displayMessage(_ messageForDisplay: InAppMessagingDisplayMessage,
                       displayDelegate: InAppMessagingDisplayDelegate) {
     DispatchQueue.main.async {
-      self.inAppMessage = messageForDisplay
+      self.inAppMessage = (messageForDisplay, displayDelegate)
     }
   }
 }
 
 public extension View {
-  func onDisplayInAppMessage<T: View>(closure: @escaping (InAppMessagingDisplayMessage) -> T) -> some View {
+  func onDisplayInAppMessage<T: View>(closure: @escaping (InAppMessagingDisplayMessage,
+                                                          InAppMessagingDisplayDelegate) -> T) -> some View {
     modifier(InAppMessagingDisplayModifier(closure: closure))
   }
 }
