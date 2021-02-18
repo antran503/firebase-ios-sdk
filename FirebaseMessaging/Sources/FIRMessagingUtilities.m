@@ -16,10 +16,10 @@
 
 #import "FirebaseMessaging/Sources/FIRMessagingUtilities.h"
 
+#import <GoogleUtilities/GULAppEnvironmentUtil.h>
+#import <GoogleUtilities/GULUserDefaults.h>
 #import "FirebaseCore/Sources/Public/FirebaseCore/FIROptions.h"
 #import "FirebaseMessaging/Sources/FIRMessagingLogger.h"
-#import "GoogleUtilities/Environment/Public/GoogleUtilities/GULAppEnvironmentUtil.h"
-#import "GoogleUtilities/UserDefaults/Public/GoogleUtilities/GULUserDefaults.h"
 
 static const uint64_t kBytesToMegabytesDivisor = 1024 * 1024LL;
 NSString *const kFIRMessagingInstanceIDUserDefaultsKeyLocale =
@@ -121,7 +121,7 @@ NSSearchPathDirectory FIRMessagingSupportedDirectory(void) {
 
 #pragma mark - Locales
 
-NSDictionary *FIRMessagingFirebaselocalesMap() {
+NSDictionary *FIRMessagingFirebaselocalesMap(void) {
   return @{
     // Albanian
     @"sq" : @[ @"sq_AL" ],
@@ -239,7 +239,7 @@ NSDictionary *FIRMessagingFirebaselocalesMap() {
   };
 }
 
-NSArray *FIRMessagingFirebaseLocales() {
+NSArray *FIRMessagingFirebaseLocales(void) {
   NSMutableArray *locales = [NSMutableArray array];
   NSDictionary *localesMap = FIRMessagingFirebaselocalesMap();
   for (NSString *key in localesMap) {
@@ -248,7 +248,7 @@ NSArray *FIRMessagingFirebaseLocales() {
   return locales;
 }
 
-NSString *FIRMessagingCurrentLocale() {
+NSString *FIRMessagingCurrentLocale(void) {
   NSArray *locales = FIRMessagingFirebaseLocales();
   NSArray *preferredLocalizations =
       [NSBundle preferredLocalizationsFromArray:locales
@@ -258,7 +258,7 @@ NSString *FIRMessagingCurrentLocale() {
   return legalDocsLanguage ? legalDocsLanguage : @"en";
 }
 
-BOOL FIRMessagingHasLocaleChanged() {
+BOOL FIRMessagingHasLocaleChanged(void) {
   NSString *lastLocale = [[GULUserDefaults standardUserDefaults]
       stringForKey:kFIRMessagingInstanceIDUserDefaultsKeyLocale];
   NSString *currentLocale = FIRMessagingCurrentLocale();
