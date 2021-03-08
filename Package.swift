@@ -141,6 +141,11 @@ let package = Package(
       url: "https://github.com/firebase/leveldb.git",
       .revision("e4e8ab44a2781a3656b4b5852e71c07fd18fecfa")
     ),
+    .package(
+      name: "nlohmann_json",
+      url: "https://github.com/wu-hui/json.git",
+      .exact("3.9.1")
+    ),
     // Branches need a force update with a run with the revision set like below.
     //   .package(url: "https://github.com/paulb777/nanopb.git", .revision("564392bd87bd093c308a3aaed3997466efb95f74"))
   ],
@@ -437,6 +442,7 @@ let package = Package(
         .product(name: "nanopb", package: "nanopb"),
         .product(name: "abseil", package: "abseil"),
         .product(name: "gRPC-cpp", package: "gRPC"),
+        .product(name: "nlohmann_json", package: "nlohmann_json"),
       ],
       path: "Firestore",
       exclude: [
