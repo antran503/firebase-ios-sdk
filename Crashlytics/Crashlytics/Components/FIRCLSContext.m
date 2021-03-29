@@ -197,7 +197,7 @@ bool FIRCLSContextInitialize(FIRCLSInternalReport* report,
         FIRCLSContextAppendToRoot(rootPath, fileName);
   });
 
-  if (!_firclsContext.readonly->debuggerAttached) {
+  if (YES) {
 #if CLS_SIGNAL_SUPPORTED
     dispatch_group_async(group, queue, ^{
       _firclsContext.readonly->signal.path =
