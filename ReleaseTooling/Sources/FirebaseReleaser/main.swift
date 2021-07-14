@@ -53,6 +53,10 @@ struct FirebaseReleaser: ParsableCommand {
           help: "Update the tags only")
   var updateTagsOnly: Bool
 
+  /// Set this option to update tags only
+  @Option(help: "Update the CHANGELOGs")
+  var updateCHANGELOGs: Int?
+
   mutating func validate() throws {
     guard FileManager.default.fileExists(atPath: gitRoot.path) else {
       throw ValidationError("git-root does not exist: \(gitRoot.path)")

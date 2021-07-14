@@ -24,21 +24,26 @@ let package = Package(
   products: [
     .executable(name: "firebase-releaser", targets: ["FirebaseReleaser"]),
     .executable(name: "zip-builder", targets: ["ZipBuilder"]),
+    .executable(name: "zip-inspector", targets: ["ZipInspector"]),
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-argument-parser", .exact("0.1.0")),
   ],
   targets: [
     .target(
+      name: "FirebaseReleaser",
+      dependencies: ["ArgumentParser", "FirebaseManifest", "Utils"]
+    ),
+    .target(
       name: "ZipBuilder",
       dependencies: ["ArgumentParser", "FirebaseManifest", "Utils"]
     ),
     .target(
-      name: "FirebaseManifest"
+      name: "ZipInspector",
+      dependencies: ["ArgumentParser", "Utils"]
     ),
     .target(
-      name: "FirebaseReleaser",
-      dependencies: ["ArgumentParser", "FirebaseManifest", "Utils"]
+      name: "FirebaseManifest"
     ),
     .target(
       name: "Utils"

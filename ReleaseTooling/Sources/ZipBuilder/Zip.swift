@@ -52,6 +52,18 @@ struct Zip {
     }
   }
 
+  static func unzip(_ directory: URL, to destination: URL? = nil) -> URL {
+    guard FileManager.default.directoryExists(at: directory) else {
+      fatalError(
+        "Attempted to uncompress contents of \(directory) but the directory does not exist.")
+    }
+
+//    unzip path/to/zip '*/!(*.*)' -d ./unzipped2
+
+//    let command = "unzip"
+    return URL(fileURLWithPath: "")
+  }
+
   // Mark initialization as unavailable.
   @available(*, unavailable)
   init() { fatalError() }
