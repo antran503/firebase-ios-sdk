@@ -75,7 +75,7 @@ void LogMessage(LogLevel log_level, const std::string& message) {
   }
 
   std::lock_guard<std::mutex> lock(*gLogMutex);
-  std::cout << ">>>>> " << UnityIssue1154TestAppIos::FormattedTimestamp() << " -- " << level_word << ": " << message << std::endl;
+  std::cout << ">iOS< " << UnityIssue1154TestAppIos::FormattedTimestamp() << " -- " << level_word << ": " << message << std::endl;
 }
 
 }  // namespace util
