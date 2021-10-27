@@ -37,6 +37,7 @@
 #include "Firestore/core/src/util/firestore_exceptions.h"
 #include "Firestore/core/src/util/hard_assert.h"
 #include "Firestore/core/src/util/hashing.h"
+#include "Firestore/core/src/util/log.h"
 #include "Firestore/core/src/util/status.h"
 #include "Firestore/core/src/util/statusor.h"
 
@@ -95,9 +96,11 @@ CollectionReference DocumentReference::GetCollectionReference(
 
 void DocumentReference::SetData(core::ParsedSetData&& set_data,
                                 util::StatusCallback callback) {
+  auto start = UnityIssue1154TestApp::Log("DocumentReference::SetData start");
   firestore_->client()->WriteMutations(
       {std::move(set_data).ToMutation(key(), Precondition::None())},
       std::move(callback));
+  UnityIssue1154TestApp::Log(start, "DocumentReference::SetData done");
 }
 
 void DocumentReference::UpdateData(core::ParsedUpdateData&& update_data,
@@ -114,8 +117,10 @@ void DocumentReference::DeleteDocument(util::StatusCallback callback) {
 
 void DocumentReference::GetDocument(Source source,
                                     DocumentSnapshotListener&& callback) {
+  auto start = UnityIssue1154TestApp::Log("DocumentReference::GetDocument start");
   if (source == Source::Cache) {
     firestore_->client()->GetDocumentFromLocalCache(*this, std::move(callback));
+    UnityIssue1154TestApp::Log(start, "DocumentReference::GetDocument done, Source::Cache");
     return;
   }
 
@@ -187,6 +192,7 @@ void DocumentReference::GetDocument(Source source,
       AddSnapshotListener(std::move(options), std::move(listener));
 
   listener_unowned->Resolve(std::move(registration));
+  UnityIssue1154TestApp::Log(start, "DocumentReference::GetDocument done");
 }
 
 std::unique_ptr<ListenerRegistration> DocumentReference::AddSnapshotListener(
