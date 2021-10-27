@@ -71,14 +71,14 @@ void LogMessage(LogLevel log_level, const std::string& message) {
   }
 
   std::lock_guard<std::mutex> lock(*gLogMutex);
-  std::cout << ">>>>> " << UnityIssue1154TestApp::FormattedTimestamp() << " -- " << level_word << ": " << message << std::endl;
+  std::cout << ">>>>> " << UnityIssue1154TestAppIos::FormattedTimestamp() << " -- " << level_word << ": " << message << std::endl;
 }
 
 }  // namespace util
 }  // namespace firestore
 }  // namespace firebase
 
-namespace UnityIssue1154TestApp {
+namespace UnityIssue1154TestAppIos {
 
 std::string FormattedTimestamp() {
   auto timestamp = std::chrono::system_clock::now();
@@ -105,4 +105,4 @@ std::string FormattedElapsedTime(std::chrono::time_point<std::chrono::steady_clo
   return ss.str();
 }
 
-}  // namespace UnityIssue1154TestApp
+}  // namespace UnityIssue1154TestAppIos

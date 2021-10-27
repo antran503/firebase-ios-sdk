@@ -20,6 +20,7 @@
 
 #import <Foundation/Foundation.h>
 
+#include <chrono>
 #include <cstdarg>
 #include <string>
 
@@ -91,5 +92,17 @@ void LogMessage(LogLevel level, const std::string& message) {
 }  // namespace util
 }  // namespace firestore
 }  // namespace firebase
+
+namespace UnityIssue1154TestAppIos {
+
+std::string FormattedTimestamp() {
+  return "TIMESTAMP_FILLER";
+}
+
+std::string FormattedElapsedTime(std::chrono::time_point<std::chrono::steady_clock> start) {
+  return "ELAPSED_TIME_FILLER";
+}
+
+}  // namespace UnityIssue1154TestAppIos
 
 #endif  // defined(__APPLE__)

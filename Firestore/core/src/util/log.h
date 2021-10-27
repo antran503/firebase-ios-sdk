@@ -24,7 +24,7 @@
 
 #include "Firestore/core/src/util/string_format.h"
 
-#define HAS_UnityIssue1154TestApp 1
+#define HAS_UnityIssue1154TestAppIos 1
 
 namespace firebase {
 namespace firestore {
@@ -105,7 +105,7 @@ void LogMessage(LogLevel log_level, const std::string& message);
 }  // namespace firestore
 }  // namespace firebase
 
-namespace UnityIssue1154TestApp {
+namespace UnityIssue1154TestAppIos {
 
 std::string FormattedTimestamp();
 std::string FormattedElapsedTime(std::chrono::time_point<std::chrono::steady_clock> start);
@@ -141,6 +141,6 @@ void Log(std::chrono::time_point<std::chrono::steady_clock> start_time, T... mes
   Log(messages..., suffix);
 }
 
-}  // namespace UnityIssue1154TestApp
+}  // namespace UnityIssue1154TestAppIos
 
 #endif  // FIRESTORE_CORE_SRC_UTIL_LOG_H_
