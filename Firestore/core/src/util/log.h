@@ -17,7 +17,10 @@
 #ifndef FIRESTORE_CORE_SRC_UTIL_LOG_H_
 #define FIRESTORE_CORE_SRC_UTIL_LOG_H_
 
+#include <chrono>
 #include <string>
+#include <sstream>
+
 
 #include "Firestore/core/src/util/string_format.h"
 
@@ -99,5 +102,43 @@ void LogMessage(LogLevel log_level, const std::string& message);
 }  // namespace util
 }  // namespace firestore
 }  // namespace firebase
+
+namespace UnityIssue1154TestApp {
+
+std::string FormattedTimestamp();
+std::string FormattedElapsedTime(std::chrono::time_point<std::chrono::steady_clock> start);
+
+inline void Log0(std::ostringstream& ss) {
+  LogMessage(::firebase::firestore::util::kLogLevelNotice, ss.str());
+}
+
+template <typename T>
+void Log0(std::ostringstream& ss, T message) {
+  ss << message;
+  Log0(ss);
+}
+
+template <typename T, typename... U>
+void Log0(std::ostringstream& ss, T message, U... rest) {
+  ss << message;
+  Log0(ss, rest...);
+}
+
+template <typename... T>
+std::chrono::time_point<std::chrono::steady_clock> Log(T... messages) {
+  std::ostringstream ss;
+  Log0(ss, messages...);
+  return std::chrono::steady_clock::now();
+}
+
+template <typename... T>
+void Log(std::chrono::time_point<std::chrono::steady_clock> start_time, T... messages) {
+  std::string suffix = " (elapsed time: ";
+  suffix += FormattedElapsedTime(start_time);
+  suffix += ")";
+  Log(messages..., suffix);
+}
+
+}  // namespace UnityIssue1154TestApp
 
 #endif  // FIRESTORE_CORE_SRC_UTIL_LOG_H_
