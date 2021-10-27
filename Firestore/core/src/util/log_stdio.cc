@@ -66,6 +66,7 @@ void LogMessage(LogLevel log_level, const std::string& message) {
       level_word = "ERROR";
       break;
     default:
+      std::cerr << "INTERNAL ERROR: Unknown log_level: " << static_cast<int>(log_level) << std::endl;
       UNREACHABLE();
       break;
   }
