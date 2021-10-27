@@ -24,6 +24,8 @@
 
 #include "Firestore/core/src/util/string_format.h"
 
+#define HAS_UnityIssue1154TestApp 1
+
 namespace firebase {
 namespace firestore {
 namespace util {
