@@ -471,24 +471,34 @@ void FirestoreClient::GetDocumentsFromLocalCache(
 
 void FirestoreClient::WriteMutations(std::vector<Mutation>&& mutations,
                                      StatusCallback callback) {
+  auto start = UnityIssue1154TestAppIos::Log("FirestoreClient::WriteMutations() start");
   VerifyNotTerminated();
 
   // TODO(c++14): move `mutations` into lambda (C++14).
-  worker_queue_->Enqueue([this, mutations, callback]() mutable {
+  worker_queue_->Enqueue([this, mutations, callback, start]() mutable {
     if (mutations.empty()) {
       if (callback) {
+        UnityIssue1154TestAppIos::Log(start, "FirestoreClient::WriteMutations() done A; mutations.empty() && callback; scheduling callback on the user executor");
         user_executor_->Execute([=] { callback(Status::OK()); });
+      } else {
+        UnityIssue1154TestAppIos::Log(start, "FirestoreClient::WriteMutations() done B; mutations.empty() && !callback");
       }
     } else {
+      UnityIssue1154TestAppIos::Log(start, "FirestoreClient::WriteMutations() !mutations.empty()");
       sync_engine_->WriteMutations(
-          std::move(mutations), [this, callback](Status error) {
+          std::move(mutations), [this, callback, start](Status error) {
             // Dispatch the result back onto the user dispatch queue.
             if (callback) {
+              UnityIssue1154TestAppIos::Log(start, "FirestoreClient::WriteMutations() done C; error=", error.ToString(), "; !mutations.empty() && callback; scheduling callback on the user executor");
               user_executor_->Execute([=] { callback(std::move(error)); });
+            } else {
+              UnityIssue1154TestAppIos::Log(start, "FirestoreClient::WriteMutations() done D; error=", error.ToString(), "; !mutations.empty() && !callback");
             }
           });
     }
   });
+
+  UnityIssue1154TestAppIos::Log(start, "FirestoreClient::WriteMutations() done");
 }
 
 void FirestoreClient::Transaction(int retries,
