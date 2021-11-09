@@ -371,6 +371,8 @@ void RemoteStore::FillWritePipeline() {
   BatchId last_batch_id_retrieved = write_pipeline_.empty()
                                         ? kBatchIdUnknown
                                         : write_pipeline_.back().batch_id();
+  auto start = UnityIssue1154TestAppIos::Log("RemoteStore::FillWritePipeline() start");
+
   while (CanAddToWritePipeline()) {
     absl::optional<MutationBatch> batch =
         local_store_->GetNextMutationBatch(last_batch_id_retrieved);
@@ -380,13 +382,17 @@ void RemoteStore::FillWritePipeline() {
       }
       break;
     }
+    UnityIssue1154TestAppIos::Log("RemoteStore::FillWritePipeline() adding BATCH_ID=", batch->batch_id(), " to the write pipeline");
     AddToWritePipeline(*batch);
     last_batch_id_retrieved = batch->batch_id();
   }
 
   if (ShouldStartWriteStream()) {
+    UnityIssue1154TestAppIos::Log("RemoteStore::FillWritePipeline() starting the write stream");
     StartWriteStream();
   }
+
+  UnityIssue1154TestAppIos::Log(start, "RemoteStore::FillWritePipeline() done");
 }
 
 bool RemoteStore::CanAddToWritePipeline() const {
