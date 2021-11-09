@@ -207,7 +207,7 @@ void SyncEngine::WriteMutations(std::vector<model::Mutation>&& mutations,
 
   UnityIssue1154TestAppIos::Log("SyncEngine::WriteMutations() local_store_->WriteLocally(std::move(mutations))");
   LocalWriteResult result = local_store_->WriteLocally(std::move(mutations));
-  UnityIssue1154TestAppIos::Log("SyncEngine::WriteMutations() mutation_callbacks_[current_user_].insert(...)");
+  UnityIssue1154TestAppIos::Log("SyncEngine::WriteMutations() BATCH_ID=", result.batch_id(), "; mutation_callbacks_[current_user_].insert(...)");
   mutation_callbacks_[current_user_].insert(
       std::make_pair(result.batch_id(), std::move(callback)));
 
