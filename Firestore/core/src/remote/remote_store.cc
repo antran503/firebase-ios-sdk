@@ -418,14 +418,19 @@ bool RemoteStore::ShouldStartWriteStream() const {
 void RemoteStore::StartWriteStream() {
   HARD_ASSERT(ShouldStartWriteStream(),
               "StartWriteStream called when ShouldStartWriteStream is false.");
+  auto start = UnityIssue1154TestAppIos::Log("RemoteStore::StartWriteStream() start");
   write_stream_->Start();
+  UnityIssue1154TestAppIos::Log(start, "RemoteStore::StartWriteStream() done");
 }
 
 void RemoteStore::OnWriteStreamOpen() {
+  auto start = UnityIssue1154TestAppIos::Log("RemoteStore::OnWriteStreamOpen() start");
   write_stream_->WriteHandshake();
+  UnityIssue1154TestAppIos::Log(start, "RemoteStore::OnWriteStreamOpen() done");
 }
 
 void RemoteStore::OnWriteStreamHandshakeComplete() {
+  UnityIssue1154TestAppIos::Log("RemoteStore::OnWriteStreamHandshakeComplete() start");
   // Record the stream token.
   local_store_->SetLastStreamToken(write_stream_->last_stream_token());
 
