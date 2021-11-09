@@ -202,14 +202,21 @@ void SyncEngine::RemoveAndCleanupTarget(TargetId target_id, Status status) {
 
 void SyncEngine::WriteMutations(std::vector<model::Mutation>&& mutations,
                                 StatusCallback callback) {
+  auto start = UnityIssue1154TestAppIos::Log("SyncEngine::WriteMutations() start");
   AssertCallbackExists("WriteMutations");
 
+  UnityIssue1154TestAppIos::Log("SyncEngine::WriteMutations() local_store_->WriteLocally(std::move(mutations))");
   LocalWriteResult result = local_store_->WriteLocally(std::move(mutations));
+  UnityIssue1154TestAppIos::Log("SyncEngine::WriteMutations() mutation_callbacks_[current_user_].insert(...)");
   mutation_callbacks_[current_user_].insert(
       std::make_pair(result.batch_id(), std::move(callback)));
 
+  UnityIssue1154TestAppIos::Log("SyncEngine::WriteMutations() EmitNewSnapshotsAndNotifyLocalStore()");
   EmitNewSnapshotsAndNotifyLocalStore(result.changes(), absl::nullopt);
+  UnityIssue1154TestAppIos::Log("SyncEngine::WriteMutations() remote_store_->FillWritePipeline()");
   remote_store_->FillWritePipeline();
+
+  UnityIssue1154TestAppIos::Log(start, "SyncEngine::WriteMutations() done");
 }
 
 void SyncEngine::RegisterPendingWritesCallback(StatusCallback callback) {
