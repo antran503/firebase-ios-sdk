@@ -93,9 +93,11 @@ bool Stream::IsStarted() const {
 // Starting
 
 void Stream::Start() {
+  auto start = UnityIssue1154TestAppIos::Log("Stream::Start() start");
   EnsureOnQueue();
 
   if (state_ == State::Error) {
+    UnityIssue1154TestAppIos::Log("Stream::Start() in error state; calling BackoffAndTryRestarting()");
     BackoffAndTryRestarting();
     return;
   }
@@ -105,10 +107,13 @@ void Stream::Start() {
   HARD_ASSERT(state_ == State::Initial, "Already started");
   state_ = State::Starting;
 
+  UnityIssue1154TestAppIos::Log("Stream::Start() calling RequestCredentials()");
   RequestCredentials();
+  UnityIssue1154TestAppIos::Log(start, "Stream::Start() done");
 }
 
 void Stream::RequestCredentials() {
+  auto start = UnityIssue1154TestAppIos::Log("Stream::RequestCredentials() start");
   EnsureOnQueue();
 
   // Auth/AppCheck may outlive the stream, so make sure it doesn't try to access
@@ -122,20 +127,24 @@ void Stream::RequestCredentials() {
                   const absl::optional<std::string>& app_check) {
     auto strong_this = weak_this.lock();
     if (!strong_this) {
+      UnityIssue1154TestAppIos::Log("Stream::RequestCredentials()::done() !strong_this; returning");
       return;
     }
 
     std::lock_guard<std::mutex> lock(credentials->mutex);
     if (auth) {
+      UnityIssue1154TestAppIos::Log("Stream::RequestCredentials()::done() auth is valid");
       credentials->auth = *auth;
       credentials->auth_received = true;
     }
     if (app_check) {
+      UnityIssue1154TestAppIos::Log("Stream::RequestCredentials()::done() app_check is valid");
       credentials->app_check = *app_check;
       credentials->app_check_received = true;
     }
 
     if (!credentials->auth_received || !credentials->app_check_received) {
+      UnityIssue1154TestAppIos::Log("Stream::RequestCredentials()::done() not ready: credentials->auth_received=", credentials->auth_received, " credentials->app_check_received=", credentials->app_check_received, "; returning");
       return;
     }
 
@@ -149,6 +158,7 @@ void Stream::RequestCredentials() {
           // to check the close count.
           if (!strong_this ||
               strong_this->close_count_ != initial_close_count) {
+            UnityIssue1154TestAppIos::Log("Stream::RequestCredentials()::done()::EnqueueRelaxed lambda; prematurely aborting: strong_this=", static_cast<bool>(strong_this));
             return;
           }
           strong_this->ResumeStartWithCredentials(auth_token, app_check_token);
@@ -162,23 +172,30 @@ void Stream::RequestCredentials() {
       [done](const StatusOr<std::string>& app_check) {
         done(absl::nullopt, app_check.ValueOrDie());  // AppCheck never fails
       });
+
+  UnityIssue1154TestAppIos::Log(start, "Stream::RequestCredentials() done");
 }
 
 void Stream::ResumeStartWithCredentials(const StatusOr<AuthToken>& auth_token,
                                         const std::string& app_check_token) {
+  auto start = UnityIssue1154TestAppIos::Log("Stream::ResumeStartWithCredentials() start");
   EnsureOnQueue();
 
   HARD_ASSERT(state_ == State::Starting,
               "State should still be 'Starting' (was %s)", state_);
 
   if (!auth_token.ok()) {
+    UnityIssue1154TestAppIos::Log(start, "Stream::ResumeStartWithCredentials() done; !auth_token.ok(); calling OnStreamFinish()");
     OnStreamFinish(auth_token.status());
     return;
   }
 
+  UnityIssue1154TestAppIos::Log("Stream::ResumeStartWithCredentials() CreateGrpcStream()");
   grpc_stream_ = CreateGrpcStream(grpc_connection_, auth_token.ValueOrDie(),
                                   app_check_token);
+  UnityIssue1154TestAppIos::Log("Stream::ResumeStartWithCredentials() grpc_stream_->Start()");
   grpc_stream_->Start();
+  UnityIssue1154TestAppIos::Log(start, "Stream::ResumeStartWithCredentials() done");
 }
 
 void Stream::OnStreamStart() {
