@@ -105,6 +105,7 @@ GrpcStream::~GrpcStream() {
 }
 
 void GrpcStream::Start() {
+  auto start = UnityIssue1154TestAppIos::Log("GrpcStream::Start() start");
   // Make starting a quick operation that avoids a roundtrip to the server by
   // skipping the wait for initial server metadata (instead, it will be
   // automatically coalesced with the first write operation).
@@ -112,15 +113,23 @@ void GrpcStream::Start() {
   // It's generally okay to pass a null pointer as a tag; in this case in
   // particular, the tag will never come back from the completion queue (by
   // design).
+  UnityIssue1154TestAppIos::Log("GrpcStream::Start() call_->StartCall(nullptr)");
   call_->StartCall(nullptr);
 
   if (observer_) {
+    UnityIssue1154TestAppIos::Log("GrpcStream::Start() observer_ evaluated to true");
     // Start listening for new messages.
     // Order is important here -- any call to observer can potentially end this
     // stream's lifetime, so call `Read` before notifying.
+    UnityIssue1154TestAppIos::Log("GrpcStream::Start() Read()");
     Read();
+    UnityIssue1154TestAppIos::Log("GrpcStream::Start() observer_->OnStreamStart(");
     observer_->OnStreamStart();
+  } else {
+    UnityIssue1154TestAppIos::Log("GrpcStream::Start() observer_ evaluated to false");
   }
+
+  UnityIssue1154TestAppIos::Log(start, "GrpcStream::Start() done");
 }
 
 void GrpcStream::Read() {
