@@ -138,6 +138,7 @@ target_link_libraries(
   absl::optional
   absl::strings
   absl::time
+  grpc
 )
 
 if(HAVE_OPENSSL_RAND_H)

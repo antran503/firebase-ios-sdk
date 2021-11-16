@@ -28,6 +28,7 @@
 #include <string>
 
 #include "Firestore/core/src/util/hard_assert.h"
+#include "grpc/support/log.h"
 
 namespace firebase {
 namespace firestore {
@@ -38,10 +39,49 @@ std::mutex* gLogMutex = new std::mutex();
 
 std::atomic<LogLevel> g_log_level(kLogLevelNotice);
 
+bool g_grpc_log_function_installed = false;
+
+LogLevel LogLevelFromGrpcSeverity(gpr_log_severity severity) {
+  switch (severity) {
+    case GPR_LOG_SEVERITY_DEBUG:
+      return kLogLevelDebug;
+    case GPR_LOG_SEVERITY_INFO:
+      return kLogLevelNotice;
+    case GPR_LOG_SEVERITY_ERROR:
+      return kLogLevelError;
+    default:
+      std::cerr << "INTERNAL ERROR: Unknown gpr_log_severity: " << static_cast<int>(severity) << std::endl;
+      UNREACHABLE();
+      break;
+  }
+}
+
+gpr_log_severity GrpcSeverityFromLogLevel(LogLevel log_level) {
+  switch (log_level) {
+    case kLogLevelDebug:
+      return GPR_LOG_SEVERITY_DEBUG;
+    case kLogLevelNotice:
+      return GPR_LOG_SEVERITY_INFO;
+    case kLogLevelError:
+    case kLogLevelWarning:
+      return GPR_LOG_SEVERITY_ERROR;
+    default:
+      std::cerr << "INTERNAL ERROR: Unknown LogLevel: " << static_cast<int>(log_level) << std::endl;
+      UNREACHABLE();
+      break;
+  }
+}
+
+void GrpcLogFunction(gpr_log_func_args* args) {
+  LogLevel log_level = LogLevelFromGrpcSeverity(args->severity);
+  LogMessage(log_level, args->message);
+}
+
 }  // namespace
 
 void LogSetLevel(LogLevel level) {
   g_log_level = level;
+  gpr_set_log_verbosity(GrpcSeverityFromLogLevel(level));
 }
 
 bool LogIsLoggable(LogLevel level) {
@@ -75,6 +115,13 @@ void LogMessage(LogLevel log_level, const std::string& message) {
   }
 
   std::lock_guard<std::mutex> lock(*gLogMutex);
+
+  if (! g_grpc_log_function_installed) {
+    g_grpc_log_function_installed = true;
+    gpr_set_log_function(GrpcLogFunction);
+    gpr_set_log_verbosity(GrpcSeverityFromLogLevel(g_log_level));
+  }
+
   std::cout << ">iOS< " << UnityIssue1154TestAppIos::FormattedTimestamp() << " -- " << level_word << ": " << message << std::endl;
 }
 
