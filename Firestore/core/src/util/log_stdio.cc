@@ -74,7 +74,8 @@ gpr_log_severity GrpcSeverityFromLogLevel(LogLevel log_level) {
 
 void GrpcLogFunction(gpr_log_func_args* args) {
   LogLevel log_level = LogLevelFromGrpcSeverity(args->severity);
-  LogMessage(log_level, args->message);
+  std::string message = std::string("<GRPC> ") + args->message;
+  LogMessage(log_level, message);
 }
 
 }  // namespace
