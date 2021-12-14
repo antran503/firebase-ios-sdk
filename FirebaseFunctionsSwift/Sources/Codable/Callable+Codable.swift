@@ -29,8 +29,8 @@ public extension Functions {
    */
   func httpsCallable<Request: Encodable,
     Response: Decodable>(_ name: String,
-                         requestType: Request.Type,
-                         responseType: Response.Type,
+                         requestAs requestType: Request.Type = Request.self,
+                         responseAs responseType: Response.Type = Response.self,
                          encoder: StructureEncoder = StructureEncoder(),
                          decoder: StructureDecoder = StructureDecoder())
     -> Callable<Request, Response> {
