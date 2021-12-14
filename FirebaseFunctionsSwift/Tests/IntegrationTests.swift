@@ -88,7 +88,7 @@ class IntegrationTests: XCTestCase {
     let function = functions.httpsCallable("dataTest",
                                            requestAs: DataTestRequest.self,
                                            responseAs: DataTestResponse.self)
-    try function.call(data) { result in
+    function.call(data) { result in
       do {
         let response = try result.get()
         let expected = DataTestResponse(
@@ -138,7 +138,7 @@ class IntegrationTests: XCTestCase {
       requestAs: Int16.self,
       responseAs: Int.self
     )
-    try function.call(17) { result in
+    function.call(17) { result in
       do {
         let response = try result.get()
         XCTAssertEqual(response, 76)
@@ -189,7 +189,7 @@ class IntegrationTests: XCTestCase {
       responseAs: [String: Int].self
     )
     XCTAssertNotNil(function)
-    try function.call([:]) { result in
+    function.call([:]) { result in
       do {
         let data = try result.get()
         XCTAssertEqual(data, [:])
@@ -231,7 +231,7 @@ class IntegrationTests: XCTestCase {
       requestAs: [String: Int].self,
       responseAs: [String: Int].self
     )
-    try function.call([:]) { result in
+    function.call([:]) { result in
       do {
         let data = try result.get()
         XCTAssertEqual(data, [:])
@@ -264,7 +264,7 @@ class IntegrationTests: XCTestCase {
       requestAs: Int?.self,
       responseAs: Int?.self
     )
-    try function.call(nil) { result in
+    function.call(nil) { result in
       do {
         let data = try result.get()
         XCTAssertEqual(data, nil)
@@ -305,7 +305,7 @@ class IntegrationTests: XCTestCase {
       requestAs: Int?.self,
       responseAs: Int?.self
     )
-    try function.call(nil) { result in
+    function.call(nil) { result in
       do {
         _ = try result.get()
       } catch {
@@ -344,7 +344,7 @@ class IntegrationTests: XCTestCase {
       requestAs: [Int].self,
       responseAs: Int.self
     )
-    try function.call([]) { result in
+    function.call([]) { result in
       do {
         _ = try result.get()
       } catch {
@@ -384,7 +384,7 @@ class IntegrationTests: XCTestCase {
       requestAs: [Int].self,
       responseAs: Int.self
     )
-    try function.call([]) { result in
+    function.call([]) { result in
       do {
         _ = try result.get()
       } catch {
@@ -423,7 +423,7 @@ class IntegrationTests: XCTestCase {
       requestAs: [Int].self,
       responseAs: Int.self
     )
-    try function.call([]) { result in
+    function.call([]) { result in
       do {
         _ = try result.get()
       } catch {
@@ -467,7 +467,7 @@ class IntegrationTests: XCTestCase {
       responseAs: Int.self
     )
     XCTAssertNotNil(function)
-    try function.call([]) { result in
+    function.call([]) { result in
       do {
         _ = try result.get()
       } catch {
@@ -505,7 +505,7 @@ class IntegrationTests: XCTestCase {
       responseAs: Int.self
     )
     function.timeoutInterval = 0.05
-    try function.call([]) { result in
+    function.call([]) { result in
       do {
         _ = try result.get()
       } catch {
@@ -553,7 +553,7 @@ class IntegrationTests: XCTestCase {
     let function = functions.httpsCallable("dataTest",
                                            requestAs: DataTestRequest.self,
                                            responseAs: DataTestResponse.self)
-    try function(data) { result in
+    function(data) { result in
       do {
         let response = try result.get()
         let expected = DataTestResponse(
@@ -608,7 +608,7 @@ class IntegrationTests: XCTestCase {
     )
     let function: Callable<DataTestRequest, DataTestResponse> = functions.httpsCallable("dataTest")
 
-    try function(data) { result in
+    function(data) { result in
       do {
         let response = try result.get()
         let expected = DataTestResponse(
