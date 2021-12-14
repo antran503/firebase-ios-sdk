@@ -73,8 +73,6 @@ public struct Callable<Request: Encodable, Response: Decodable> {
   ///
   /// - Parameter data: Parameters to pass to the trigger.
   /// - Parameter completion: The block to call when the HTTPS request has completed.
-  ///
-  /// - Throws: An error if any value throws an error during encoding.
   public func call(_ data: Request,
                    completion: @escaping (Result<Response, Error>)
                      -> Void) {
@@ -107,14 +105,14 @@ public struct Callable<Request: Encodable, Response: Decodable> {
   ///     let greeter = functions.httpsCallable("greeter",
   ///                                           requestType: GreetingRequest.self,
   ///                                           responseType: GreetingResponse.self)
-  ///     try greeter(data) { result in
+  ///     greeter(data) { result in
   ///       print(result.greeting)
   ///     }
   /// ```
   /// You can also call a HTTPS Callable function using the following syntax:
   /// ```swift
   ///     let greeter: Callable<GreetingRequest, GreetingResponse> = functions.httpsCallable("greeter")
-  ///     try greeter(data) { result in
+  ///     greeter(data) { result in
   ///       print(result.greeting)
   ///     }
   /// ```
@@ -170,7 +168,7 @@ public struct Callable<Request: Encodable, Response: Decodable> {
     /// You can also call a HTTPS Callable function using the following syntax:
     /// ```swift
     ///     let greeter: Callable<GreetingRequest, GreetingResponse> = functions.httpsCallable("greeter")
-    ///     try await greeter(data)
+    ///     let result = try await greeter(data)
     ///     print(result.greeting)
     /// ```
     /// - Parameters:
