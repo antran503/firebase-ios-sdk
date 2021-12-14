@@ -102,15 +102,22 @@ public struct Callable<Request: Encodable, Response: Decodable> {
 
   /// Creates a directly callable function.
   ///
-  /// This allows users to call a HTTPS Callable Funciton like a normal Swift function:
-  ///
+  /// This allows users to call a HTTPS Callable Function like a normal Swift function:
+  /// ```swift
   ///     let greeter = functions.httpsCallable("greeter",
   ///                                           requestType: GreetingRequest.self,
   ///                                           responseType: GreetingResponse.self)
   ///     try greeter(data) { result in
   ///       print(result.greeting)
   ///     }
-  ///
+  /// ```
+  /// You can also call a HTTPS Callable function using the following syntax:
+  /// ```swift
+  ///     let greeter: Callable<GreetingRequest, GreetingResponse> = functions.httpsCallable("greeter")
+  ///     try greeter(data) { result in
+  ///       print(result.greeting)
+  ///     }
+  /// ```
   /// - Parameters:
   ///   - data: Parameters to pass to the trigger.
   ///   - completion: The block to call when the HTTPS request has completed.
@@ -158,6 +165,12 @@ public struct Callable<Request: Encodable, Response: Decodable> {
     ///                                           requestType: GreetingRequest.self,
     ///                                           responseType: GreetingResponse.self)
     ///     let result = try await greeter(data)
+    ///     print(result.greeting)
+    /// ```
+    /// You can also call a HTTPS Callable function using the following syntax:
+    /// ```swift
+    ///     let greeter: Callable<GreetingRequest, GreetingResponse> = functions.httpsCallable("greeter")
+    ///     try await greeter(data)
     ///     print(result.greeting)
     /// ```
     /// - Parameters:
