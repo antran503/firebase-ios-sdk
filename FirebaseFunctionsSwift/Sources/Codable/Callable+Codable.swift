@@ -26,8 +26,8 @@ public extension Functions {
     Response: Decodable>(_ name: String,
                          requestAs requestType: Request.Type = Request.self,
                          responseAs responseType: Response.Type = Response.self,
-                         encoder: StructureEncoder = StructureEncoder(),
-                         decoder: StructureDecoder = StructureDecoder())
+                         encoder: FirebaseDataEncoder = FirebaseDataEncoder(),
+                         decoder: FirebaseDataDecoder = FirebaseDataDecoder())
     -> Callable<Request, Response> {
     return Callable(callable: httpsCallable(name), encoder: encoder, decoder: decoder)
   }
@@ -50,10 +50,10 @@ public struct Callable<Request: Encodable, Response: Decodable> {
   }
 
   private let callable: HTTPSCallable
-  private let encoder: StructureEncoder
-  private let decoder: StructureDecoder
+  private let encoder: FirebaseDataEncoder
+  private let decoder: FirebaseDataDecoder
 
-  init(callable: HTTPSCallable, encoder: StructureEncoder, decoder: StructureDecoder) {
+  init(callable: HTTPSCallable, encoder: FirebaseDataEncoder, decoder: FirebaseDataDecoder) {
     self.callable = callable
     self.encoder = encoder
     self.decoder = decoder
@@ -149,9 +149,9 @@ public struct Callable<Request: Encodable, Response: Decodable> {
     /// - Returns: The decoded `Response` value
     @available(iOS 15, tvOS 15, macOS 12, watchOS 8, *)
     public func call(_ data: Request,
-                     encoder: StructureEncoder = StructureEncoder(),
-                     decoder: StructureDecoder =
-                       StructureDecoder()) async throws -> Response {
+                     encoder: FirebaseDataEncoder = FirebaseDataEncoder(),
+                     decoder: FirebaseDataDecoder =
+                       FirebaseDataDecoder()) async throws -> Response {
       let encoded = try encoder.encode(data)
       let result = try await callable.call(encoded)
       return try decoder.decode(Response.self, from: result.data)
