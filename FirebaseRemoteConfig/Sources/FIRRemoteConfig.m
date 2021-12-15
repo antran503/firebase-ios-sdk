@@ -29,6 +29,7 @@
 #import "FirebaseRemoteConfig/Sources/RCNConfigValue_Internal.h"
 #import "FirebaseRemoteConfig/Sources/RCNDevice.h"
 #import "FirebaseRemoteConfig/Sources/RCNPersonalization.h"
+#import "FirebaseRemoteConfig/Sources/RealTimeConfigStream.h"
 
 /// Remote Config Error Domain.
 /// TODO: Rename according to obj-c style for constants.
@@ -63,6 +64,7 @@ typedef void (^FIRRemoteConfigListener)(NSString *_Nonnull, NSDictionary *_Nonnu
   RCNConfigSettings *_settings;
   RCNConfigFetch *_configFetch;
   RCNConfigExperiment *_configExperiment;
+  RealTimeConfigStream *_realTimeConfigStream;
   dispatch_queue_t _queue;
   NSString *_appName;
   NSMutableArray *_listeners;
@@ -158,6 +160,8 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, FIRRemote
                                                  namespace:_FIRNamespace
                                                    options:options];
 
+    _realTimeConfigStream = [[RealTimeConfigStream alloc] initWithClass: _configFetch];
+      
     [_settings loadConfigFromMetadataTable];
 
     if (analytics) {
@@ -561,5 +565,9 @@ typedef void (^FIRRemoteConfigActivateChangeCompletion)(BOOL changed, NSError *_
   };
   dispatch_async(_queue, setConfigSettingsBlock);
 }
+
+#pragma mark - real time
+
+
 
 @end
