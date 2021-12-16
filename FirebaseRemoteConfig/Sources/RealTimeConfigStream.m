@@ -11,12 +11,12 @@
 #import "RealTimeConfigStream.h"
 
 static NSString *const hostAddress = @"localhost:50051";
-static NSTimeInterval *const instantFetchTime = 0;
 
 @implementation RealTimeConfigStream {
     RCNConfigFetch *_configFetch;
+    GRPCMutableCallOptions *_options;
     RTRCRealTimeRCService *_service;
-    id _realTimeDelegate;
+    __weak id _realTimeDelegate;
     GRPCUnaryProtoCall *_streamCall;
 }
 
@@ -27,18 +27,18 @@ static NSTimeInterval *const instantFetchTime = 0;
         _configFetch = configFetch;
         
         // Set retry options
-        GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
-        options.transport = GRPCDefaultTransportImplList.core_insecure;
-        options.retryEnabled = TRUE;
-        options.retryCount = (NSUInteger)5;
-        options.keepaliveInterval = 100000;
-        options.connectMaxBackoff = 1000000;
-        options.connectInitialBackoff = 100;
-        options.retryFactor = 2.0;
-        options.minRetryInterval = 10;
-        options.maxRetryInterval = 100;
+        _options = [[GRPCMutableCallOptions alloc] init];
+        _options.transport = GRPCDefaultTransportImplList.core_insecure;
+        _options.retryEnabled = TRUE;
+        _options.retryCount = (NSUInteger)5;
+        _options.keepaliveInterval = 100000;
+        _options.connectMaxBackoff = 1000000;
+        _options.connectInitialBackoff = 100;
+        _options.retryFactor = 2.0;
+        _options.minRetryInterval = 10;
+        _options.maxRetryInterval = 100;
         
-        _service = [[RTRCRealTimeRCService alloc] initWithHost:hostAddress callOptions:options];
+        _service = [[RTRCRealTimeRCService alloc] initWithHost:hostAddress callOptions:_options];
     }
     
     return  self;
@@ -51,8 +51,9 @@ static NSTimeInterval *const instantFetchTime = 0;
 - (void)startStream {
     RTRCOpenFetchInvalidationStreamRequest *request = [RTRCOpenFetchInvalidationStreamRequest message];
     request.lastKnownVersionNumber = 1;
+    NSLog(@"Stream started");
     
-    if (self->_streamCall == nil) {
+    if (self->_streamCall == nil || self->_streamCall == NULL) {
         GRPCUnaryProtoCall *call = [_service openFetchInvalidationStreamWithMessage:request responseHandler:self callOptions:nil];
         self->_streamCall = call;
     }
@@ -62,18 +63,23 @@ static NSTimeInterval *const instantFetchTime = 0;
 
 - (void)pauseStream {
     if (self->_streamCall != NULL) {
+        NSLog(@"Pausing stream");
         [self->_streamCall cancel];
+        self->_streamCall = NULL;
     }
 }
 
 - (void)didReceiveProtoMessage:(GPBMessage *)message {
     RTRCOpenFetchInvalidationStreamResponse *response = (RTRCOpenFetchInvalidationStreamResponse *)message;
     if (response) {
-        // Fetch
-        [self->_configFetch fetchConfigWithExpirationDuration: *instantFetchTime
+        NSLog(@"Config invalidation message Received");
+        // Fetch with expiration set to zero to ensure config is fetched.
+        [self->_configFetch fetchConfigWithExpirationDuration: 0
             completionHandler: ^(FIRRemoteConfigFetchStatus status, NSError *error) {
+                NSLog(@"Fetching new config");
                 if (status == FIRRemoteConfigFetchStatusSuccess) {
-                    if (self->_realTimeDelegate != NULL) {
+                    if (self->_realTimeDelegate != NULL || self->_realTimeDelegate != nil) {
+                        NSLog(@"Executing callback delegate");
                         [self->_realTimeDelegate handleRealTimeConfigFetch:self];
                     }
                 } else {

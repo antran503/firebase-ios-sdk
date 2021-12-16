@@ -12,19 +12,16 @@
 #import "Generated/RealTimeRemoteConfig.pbrpc.h"
 #import <UIKit/UIKit.h>
 
-@interface RealTimeConfigStream : UIViewController <GRPCProtoResponseHandler> {
-}
+@interface RealTimeConfigStream : UIViewController <GRPCProtoResponseHandler>
 
 @property(weak, nonatomic) IBOutlet UILabel *outputLabel;
+@property(weak, nonatomic) id <RealTimeDelegateCallback> realTimeDelegate;
+
 - (instancetype) initWithClass:(RCNConfigFetch *) configFetch;
 - (void)setRealTimeDelegateCallback:(id)realTimeDelegate;
 - (void)removeRealTimeDelegateCallback;
-
-@end
-
-// Callback delegate
-@interface NSObject(RealTimeDelegateMethods)
-- (void)handleRealTimeConfigFetch: (RealTimeConfigStream *)realTimeStream;
+- (void)startStream;
+- (void)pauseStream;
 
 @end
 

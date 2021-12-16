@@ -568,6 +568,20 @@ typedef void (^FIRRemoteConfigActivateChangeCompletion)(BOOL changed, NSError *_
 
 #pragma mark - real time
 
+- (void)startRealTimeStream {
+    [self->_realTimeConfigStream startStream];
+}
 
+- (void)pauseRealTimeStream {
+    [self->_realTimeConfigStream pauseStream];
+}
+
+- (void)addRealTimeCallback: (id)callbackDelegate {
+    [self->_realTimeConfigStream setRealTimeDelegateCallback:callbackDelegate];
+}
+
+- (void)removeRealTimeCallback {
+    [self->_realTimeConfigStream removeRealTimeDelegateCallback];
+}
 
 @end
