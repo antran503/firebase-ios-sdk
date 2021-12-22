@@ -584,4 +584,8 @@ typedef void (^FIRRemoteConfigActivateChangeCompletion)(BOOL changed, NSError *_
     [self->_realTimeConfigStream removeRealTimeDelegateCallback];
 }
 
+- (void)monitorStream {
+    [self->_realTimeConfigStream viewDidLoad];
+}
+
 @end

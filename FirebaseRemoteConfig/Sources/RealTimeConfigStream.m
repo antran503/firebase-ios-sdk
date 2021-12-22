@@ -18,6 +18,8 @@ static NSString *const hostAddress = @"localhost:50051";
     RTRCRealTimeRCService *_service;
     __weak id _realTimeDelegate;
     GRPCUnaryProtoCall *_streamCall;
+    NSNotificationCenter *_notificationCenter;
+    BOOL _streamStarted;
 }
 
 - (instancetype) initWithClass: (RCNConfigFetch *)configFetch {
@@ -39,6 +41,8 @@ static NSString *const hostAddress = @"localhost:50051";
         _options.maxRetryInterval = 100;
         
         _service = [[RTRCRealTimeRCService alloc] initWithHost:hostAddress callOptions:_options];
+        _notificationCenter = [NSNotificationCenter defaultCenter];
+        _streamStarted = FALSE;
     }
     
     return  self;
@@ -58,14 +62,18 @@ static NSString *const hostAddress = @"localhost:50051";
         self->_streamCall = call;
     }
     
-    [self->_streamCall start];
+    if (!self->_streamStarted) {
+        [self->_streamCall start];
+        self->_streamStarted = TRUE;
+    }
 }
 
 - (void)pauseStream {
-    if (self->_streamCall != NULL) {
+    if (self->_streamCall != NULL && self->_streamStarted) {
         NSLog(@"Pausing stream");
         [self->_streamCall cancel];
         self->_streamCall = NULL;
+        self->_streamStarted = FALSE;
     }
 }
 
@@ -97,6 +105,23 @@ static NSString *const hostAddress = @"localhost:50051";
 
 - (void)removeRealTimeDelegateCallback {
     self->_realTimeDelegate = NULL;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    [self->_notificationCenter addObserver:self selector:@selector(isInBackground) name:UIApplicationDidEnterBackgroundNotification object:nil];
+    [self->_notificationCenter addObserver:self selector:@selector(isInForeground) name:UIApplicationWillEnterForegroundNotification object:nil];
+}
+
+- (void)isInBackground {
+    NSLog(@"Background");
+    [self pauseStream];
+}
+
+- (void)isInForeground {
+    NSLog(@"Foreground");
+    [self startStream];
 }
 
 - (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {

@@ -296,6 +296,8 @@ NS_SWIFT_NAME(RemoteConfig)
 
 - (void)removeRealTimeCallback;
 
+- (void)monitorStream;
+
 @end
 
 // Realtime Callback delegate
