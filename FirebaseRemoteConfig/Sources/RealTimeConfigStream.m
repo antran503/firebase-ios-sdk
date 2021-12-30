@@ -55,7 +55,7 @@ static NSString *const hostAddress = @"localhost:50051";
 - (void)startStream {
     RTRCOpenFetchInvalidationStreamRequest *request = [RTRCOpenFetchInvalidationStreamRequest message];
     request.lastKnownVersionNumber = 1;
-    NSLog(@"Stream started");
+    NSLog(@"Stream attempting to be started");
     
     if (self->_streamCall == nil || self->_streamCall == NULL) {
         GRPCUnaryProtoCall *call = [_service openFetchInvalidationStreamWithMessage:request responseHandler:self callOptions:nil];
@@ -63,6 +63,7 @@ static NSString *const hostAddress = @"localhost:50051";
     }
     
     if (!self->_streamStarted) {
+        NSLog(@"Stream started");
         [self->_streamCall start];
         self->_streamStarted = TRUE;
     }
@@ -86,7 +87,7 @@ static NSString *const hostAddress = @"localhost:50051";
             completionHandler: ^(FIRRemoteConfigFetchStatus status, NSError *error) {
                 NSLog(@"Fetching new config");
                 if (status == FIRRemoteConfigFetchStatusSuccess) {
-                    if (self->_realTimeDelegate != NULL || self->_realTimeDelegate != nil) {
+                    if (self->_realTimeDelegate != NULL && self->_realTimeDelegate != nil) {
                         NSLog(@"Executing callback delegate");
                         [self->_realTimeDelegate handleRealTimeConfigFetch:self];
                     }
